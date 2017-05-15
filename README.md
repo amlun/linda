@@ -4,7 +4,7 @@ Linda is a dispatcher and scheduler system.It allows you to save tasks and push 
 
 Linda is based on redis and cassandra, and it will support more backend.
 
-# Installation
+## Installation
 
 To install Linda, use 
 
@@ -16,9 +16,9 @@ to install the package, and then use
 
 to install the dependency packages
 
-# Getting Started
+## Getting Started
 
-## Simple Usage
+### Simple Usage
 
 Edit the apps/server.go, apps/scheduler.go, modify the config with your own urlString
 
@@ -73,10 +73,26 @@ Use
 to start scheduler to schedule the timing task.
 
 
-## Api Doc
+### API Doc
 
  * GET /api/ping - Check the server if it is alive.
  * GET /api/tasks - List all tasks.
  * GET /api/queues - List all queues and its length.
  * GET /api/job - Get a job from queue, now it only implements a simple way to fetch a job.
  * POST /api/task - Post a task.
+ 
+### API Usage 
+
+#### Post A Task
+HTTP method: `POST`
+
+Host/port: `http://localhost:8081/api/task`
+
+Request Parameters: `Func=test&Args=a&Args=b&Args=c&Frequency=100000000000`
+
+#### Get A Job
+HTTP method: `GET`
+
+Host/port: `http://localhost:8081/api/job`
+
+Request Parameters: `queue=test`
