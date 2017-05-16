@@ -5,5 +5,6 @@ import:
   - redis
 - package: github.com/carlescere/scheduler
 - package: github.com/gocql/gocql
+- package: github.com/sirupsen/logrus
 - package: github.com/twinj/uuid
 - package: gopkg.in/gin-gonic/gin.v1

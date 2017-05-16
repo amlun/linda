@@ -2,8 +2,8 @@ package linda
 
 import (
 	"github.com/amlun/linda/linda/core"
+	log "github.com/sirupsen/logrus"
 	"github.com/twinj/uuid"
-	"log"
 )
 
 type Linda struct {
@@ -26,7 +26,7 @@ func NewLinda(config *Config) *Linda {
 		},
 	}
 	if l.dispatcher.Init() != nil {
-		panic("Linda dispatcher init failed")
+		log.Panic("Linda dispatcher init failed")
 	}
 	return l
 }
@@ -49,7 +49,7 @@ func (l *Linda) Schedule(frequency int) func() {
 			job.Task = task
 			l.PushJob(job)
 		}
-		log.Printf("schedule the job with frequency [%d] seconds", frequency)
+		log.WithField("frequency", frequency).Info("schedule the job with frequency")
 	}
 }
 

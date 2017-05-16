@@ -8,10 +8,10 @@ import (
 
 type Broker interface {
 	Connect(url *neturl.URL) error
+	Close() error
 	PushJob(job *core.Job) error
 	GetJob(queue string, job *core.Job) error
 	QueueMonitors() []core.QueueStatus
-	Close() error
 }
 
 // registered brokers

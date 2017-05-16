@@ -1,5 +1,5 @@
-hash: 83764c64855905fb6b9641053d18dcb39b8afb1547aa39c56ab2ca46657a8de6
-updated: 2017-05-12T18:46:34.517781784+08:00
+hash: 4f14e986aa6964cc7b1a6875679b4505f2f5596668aa5ac4889b56894e8cac87
+updated: 2017-05-16T15:08:33.812209551+08:00
 imports:
 - name: github.com/carlescere/scheduler
   version: ee74d2f83d82cd1d2e92ed3ec3dbaf162ca5ece5
@@ -31,6 +31,8 @@ imports:
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/sirupsen/logrus
+  version: 5e5dc898656f695e2a086b8e12559febbfc01562
 - name: github.com/twinj/uuid
   version: 7bbe408d339787c56ec15568c947c0959db1b275
 - name: golang.org/x/net
@@ -38,7 +40,7 @@ imports:
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 9c9d83fe39ed3fd2d9249fcf6b755891fff54b03
+  version: 1e99a4f9d247b28c670884b9a8d6801f39a47b77
   subpackages:
   - unix
 - name: gopkg.in/gin-gonic/gin.v1

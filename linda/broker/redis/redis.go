@@ -42,21 +42,6 @@ func (b *Broker) Close() error {
 	return b.pool.Close()
 }
 
-func (b *Broker) QueueMonitors() []core.QueueStatus {
-	con := b.pool.Get()
-	defer con.Close()
-	var queueStatus core.QueueStatus
-	queues, _ := redis.Strings(con.Do("SMEMBERS", "queues"))
-	queueStatusList := make([]core.QueueStatus, len(queues))
-	for i, queue := range queues {
-		length, _ := redis.Int(con.Do("LLEN", fmt.Sprintf("queues:%s", queue)))
-		queueStatus.Queue = queue
-		queueStatus.Length = length
-		queueStatusList[i] = queueStatus
-	}
-	return queueStatusList
-}
-
 func (b *Broker) PushJob(job *core.Job) error {
 	job.RunTime = time.Now()
 	bytes, err := json.Marshal(job)
@@ -99,6 +84,21 @@ func (b *Broker) GetJob(queue string, job *core.Job) error {
 	}
 	return nil
 
+}
+
+func (b *Broker) QueueMonitors() []core.QueueStatus {
+	con := b.pool.Get()
+	defer con.Close()
+	var queueStatus core.QueueStatus
+	queues, _ := redis.Strings(con.Do("SMEMBERS", "queues"))
+	queueStatusList := make([]core.QueueStatus, len(queues))
+	for i, queue := range queues {
+		length, _ := redis.Int(con.Do("LLEN", fmt.Sprintf("queues:%s", queue)))
+		queueStatus.Queue = queue
+		queueStatus.Length = length
+		queueStatusList[i] = queueStatus
+	}
+	return queueStatusList
 }
 
 // register redis broker when module init
