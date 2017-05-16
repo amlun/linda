@@ -72,7 +72,7 @@ func (s *Saver) Frequency(frequency int) error {
 func (s *Saver) Frequencies() []int {
 	var frequencyList []int
 	var frequency int
-	iter := s.session.Query(`SELECT frequency FROM frequencies`, ).Iter()
+	iter := s.session.Query(`SELECT frequency FROM frequencies`).Iter()
 	for iter.Scan(&frequency) {
 		frequencyList = append(frequencyList, frequency)
 	}

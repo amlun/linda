@@ -2,5 +2,5 @@ package core
 
 type QueueStatus struct {
 	Queue  string `json:"queue"`
-	Length int `json:"length"`
+	Length int    `json:"length"`
 }
