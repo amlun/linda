@@ -46,22 +46,22 @@ func (s *Saver) Close() error {
 }
 
 func (s *Saver) PublishTask(t *core.Task) error {
-	if err := s.session.Query(`INSERT INTO tasks (id, args, create_time, frequency, func) VALUES (?, ?, ?, ?, ?)`,
-		t.ID, t.Args, time.Now(), t.Frequency, t.Func).Exec(); err != nil {
+	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, frequency, func) VALUES (?, ?, ?, ?, ?)`,
+		t.TaskId, t.Args, time.Now(), t.Frequency, t.Func).Exec(); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *Saver) PublishJob(t *core.Job) error {
-	if err := s.session.Query(`INSERT INTO jobs (id, args, func, run_time, status, task_id) VALUES (?, ?, ?, ?, ?, ?)`,
-		t.ID, t.Args, t.Func, t.RunTime, t.Status, t.TaskId).Exec(); err != nil {
+	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id) VALUES (?, ?, ?, ?, ?, ?)`,
+		t.JobId, t.Args, t.Func, t.RunTime, t.Status, t.TaskId).Exec(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Saver) Frequency(frequency time.Duration) error {
+func (s *Saver) Frequency(frequency int) error {
 	if err := s.session.Query(`UPDATE frequencies SET count = count + 1 WHERE frequency = ?`,
 		frequency).Exec(); err != nil {
 		return err
@@ -69,9 +69,9 @@ func (s *Saver) Frequency(frequency time.Duration) error {
 	return nil
 }
 
-func (s *Saver) Frequencies() []time.Duration {
-	var frequencyList []time.Duration
-	var frequency time.Duration
+func (s *Saver) Frequencies() []int {
+	var frequencyList []int
+	var frequency int
 	iter := s.session.Query(`SELECT frequency FROM frequencies`, ).Iter()
 	for iter.Scan(&frequency) {
 		frequencyList = append(frequencyList, frequency)
@@ -80,10 +80,10 @@ func (s *Saver) Frequencies() []time.Duration {
 	return frequencyList
 }
 
-func (s *Saver) GetTimingTask(frequency time.Duration, tasks chan core.Task) {
+func (s *Saver) GetTimingTask(frequency int, tasks chan core.Task) {
 	var task core.Task
-	iter := s.session.Query(`SELECT id, args, frequency, func FROM tasks WHERE frequency = ?`, frequency).Iter()
-	for iter.Scan(&task.ID, &task.Args, &task.Frequency, &task.Func) {
+	iter := s.session.Query(`SELECT task_id, args, frequency, func FROM tasks WHERE frequency = ?`, frequency).Iter()
+	for iter.Scan(&task.TaskId, &task.Args, &task.Frequency, &task.Func) {
 		tasks <- task
 	}
 	close(tasks)
@@ -105,8 +105,8 @@ func (s *Saver) TaskList(taskList *core.TaskList) error {
 	if err != nil {
 		return err
 	}
-	iter := s.session.Query(`SELECT id, args, frequency, func FROM tasks`).PageSize(PAGE_SIZE).PageState(stateByte).Iter()
-	for iter.Scan(&task.ID, &task.Args, &task.Frequency, &task.Func) {
+	iter := s.session.Query(`SELECT task_id, args, frequency, func FROM tasks`).PageSize(PAGE_SIZE).PageState(stateByte).Iter()
+	for iter.Scan(&task.TaskId, &task.Args, &task.Frequency, &task.Func) {
 		tasks = append(tasks, task)
 		i++
 	}

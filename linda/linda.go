@@ -4,7 +4,6 @@ import (
 	"github.com/amlun/linda/linda/core"
 	"github.com/twinj/uuid"
 	"log"
-	"time"
 )
 
 type Linda struct {
@@ -37,7 +36,7 @@ func (l *Linda) Close() {
 }
 
 // schedule jobs with frequency
-func (l *Linda) Schedule(frequency time.Duration) func() {
+func (l *Linda) Schedule(frequency int) func() {
 	return func() {
 		var job core.Job
 		tasks := make(chan core.Task)
@@ -45,19 +44,19 @@ func (l *Linda) Schedule(frequency time.Duration) func() {
 			l.saver.GetTimingTask(frequency, tasks)
 		}()
 		for task := range tasks {
-			l.saver.ScheduleTask(task.ID)
-			job.ID = uuid.NewV4().String()
-			job.TaskId = task.ID
+			l.saver.ScheduleTask(task.TaskId)
+			job.JobId = uuid.NewV4().String()
+			job.TaskId = task.TaskId
 			job.Func = task.Func
 			job.Args = task.Args
 			l.PushJob(job)
 		}
-		log.Printf("schedule the job with frequency [%s]", frequency)
+		log.Printf("schedule the job with frequency [%d] seconds", frequency)
 	}
 }
 
 // schedule list
-func (l *Linda) Schedules() []time.Duration {
+func (l *Linda) Schedules() []int {
 	return l.saver.Frequencies()
 }
 

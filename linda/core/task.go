@@ -1,10 +1,8 @@
 package core
 
-import "time"
-
 type Task struct {
-	ID        string `json:"task_id"`
-	Frequency time.Duration `json:"frequency"`
+	TaskId    string `json:"task_id"`
+	Frequency int `json:"frequency"`
 	Func      string `json:"func"`
 	Args      []string `json:"args"`
 }

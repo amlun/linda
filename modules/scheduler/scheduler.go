@@ -22,7 +22,7 @@ func New(linda *linda.Linda) *scheduler {
 func (s *scheduler) Start() {
 	list := s.linda.Schedules()
 	for _, frequency := range list {
-		cron.Every(int(frequency.Seconds())).Seconds().Run(s.linda.Schedule(frequency))
+		cron.Every(frequency).Seconds().Run(s.linda.Schedule(frequency))
 	}
 	runtime.Goexit()
 }

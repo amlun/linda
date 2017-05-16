@@ -6,7 +6,6 @@ import (
 	"github.com/twinj/uuid"
 	"gopkg.in/gin-gonic/gin.v1"
 	"net/http"
-	"time"
 )
 
 var result Result
@@ -36,13 +35,13 @@ func (a *api) pushTask() gin.HandlerFunc {
 		if err != nil {
 			panic(err)
 		}
-		if task.ID == "" {
-			task.ID = uuid.NewV4().String()
+		if task.TaskId == "" {
+			task.TaskId = uuid.NewV4().String()
 		}
 		if task.Func == "" {
 			panic("Func can not be empty")
 		}
-		if task.Frequency > 0 && task.Frequency < time.Minute {
+		if task.Frequency > 0 && task.Frequency < 60 {
 			panic("Frequency too quickly, at least one minute")
 		}
 		err = a.linda.PushTask(task)
@@ -50,10 +49,8 @@ func (a *api) pushTask() gin.HandlerFunc {
 			panic(err)
 		}
 		var job = core.Job{
-			ID:     uuid.NewV4().String(),
-			TaskId: task.ID,
-			Func:   task.Func,
-			Args:   task.Args,
+			JobId: uuid.NewV4().String(),
+			Task:  task,
 		}
 		err = a.linda.PushJob(job)
 		if err != nil {
