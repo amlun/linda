@@ -36,6 +36,7 @@ func main() {
 		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
 	}
 	l := linda.NewLinda(&config)
+	defer l.Close()
 	server.Start(l)
 }
 ```
@@ -54,6 +55,7 @@ func main() {
 		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
 	}
 	l := linda.NewLinda(&config)
+	defer l.Close()
 	s := scheduler.New(l)
 	s.Start()
 }
