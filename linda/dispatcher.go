@@ -45,26 +45,23 @@ func (d *dispatcher) PushTask(task core.Task) error {
 		return err
 	}
 	log.WithField("task", task).Info("push task to saver")
-	if task.Frequency != 0 {
-		// save task frequency for scheduler
-		err = d.saver.Frequency(task.Frequency)
-		if err != nil {
-			return err
-		}
-		log.WithField("task", task).Info("save task frequency for scheduler")
-	}
 	return nil
 }
 
-// push a job to broker and save it
+// push a job to broker and saver
 func (d *dispatcher) PushJob(job core.Job) error {
 	err := d.broker.PushJob(&job)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	d.saver.PublishJob(&job)
-	log.WithField("job", job).Info("push job to broker and saver")
+	log.WithField("job", job).Info("push job to broker")
+	err = d.saver.PublishJob(&job)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	log.WithField("job", job).Info("push job to saver")
 	return nil
 }
 

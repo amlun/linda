@@ -60,7 +60,15 @@ func (l *Linda) Schedules() []int {
 
 // get all task queues and monitor
 func (l *Linda) MonitorQueues() []core.QueueStatus {
-	return l.broker.QueueMonitors()
+	var queueStatus core.QueueStatus
+	queues := l.saver.Queues()
+	queueStatusList := make([]core.QueueStatus, len(queues))
+	for i, queue := range queues {
+		queueStatus.Queue = queue
+		queueStatus.Length = l.broker.Length(queue)
+		queueStatusList[i] = queueStatus
+	}
+	return queueStatusList
 }
 
 // get task list

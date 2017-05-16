@@ -50,20 +50,20 @@ func (s *Saver) PublishTask(t *core.Task) error {
 		t.TaskId, t.Args, time.Now(), t.Frequency, t.Func).Exec(); err != nil {
 		return err
 	}
+	batch := s.session.NewBatch(gocql.CounterBatch)
+	if t.Frequency > 0 {
+		batch.Query(`UPDATE frequencies SET count = count + 1 WHERE frequency = ?`, t.Frequency)
+	}
+	batch.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, t.Func)
+	if err := s.session.ExecuteBatch(batch); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (s *Saver) PublishJob(t *core.Job) error {
 	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id) VALUES (?, ?, ?, ?, ?, ?)`,
 		t.JobId, t.Args, t.Func, t.RunTime, t.Status, t.TaskId).Exec(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Saver) Frequency(frequency int) error {
-	if err := s.session.Query(`UPDATE frequencies SET count = count + 1 WHERE frequency = ?`,
-		frequency).Exec(); err != nil {
 		return err
 	}
 	return nil
@@ -78,6 +78,17 @@ func (s *Saver) Frequencies() []int {
 	}
 	iter.Close()
 	return frequencyList
+}
+
+func (s *Saver) Queues() []string {
+	var queueList []string
+	var queue string
+	iter := s.session.Query(`SELECT queue FROM queues`).Iter()
+	for iter.Scan(&queue) {
+		queueList = append(queueList, queue)
+	}
+	iter.Close()
+	return queueList
 }
 
 func (s *Saver) GetTimingTask(frequency int, tasks chan core.Task) {

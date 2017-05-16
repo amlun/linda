@@ -11,7 +11,7 @@ type Broker interface {
 	Close() error
 	PushJob(job *core.Job) error
 	GetJob(queue string, job *core.Job) error
-	QueueMonitors() []core.QueueStatus
+	Length(queue string) int
 }
 
 // registered brokers

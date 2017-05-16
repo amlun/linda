@@ -54,9 +54,10 @@ func (b *Broker) PushJob(job *core.Job) error {
 	if queue == "" {
 		return errors.New("queue can not be empty")
 	}
-	// All queues for monitor
-	con.Send("SADD", "queues", queue)
-	con.Send("RPUSH", fmt.Sprintf("queues:%s", queue), bytes)
+	_, err = con.Do("RPUSH", fmt.Sprintf("queues:%s", queue), bytes)
+	if err != nil {
+		return err
+	}
 	//if job.Delay == 0 {
 	//	job.RunTime = time.Now()
 	//	con.Send("RPUSH", fmt.Sprintf("queues:%s", queue), bytes)
@@ -64,16 +65,12 @@ func (b *Broker) PushJob(job *core.Job) error {
 	//	job.RunTime = time.Now().Add(job.Delay)
 	//	con.Send("ZADD", fmt.Sprintf("queues:%s:delayed", queue), job.RunTime.Unix(), bytes)
 	//}
-	con.Flush()
 	return nil
 }
 
 func (b *Broker) GetJob(queue string, job *core.Job) error {
 	con := b.pool.Get()
 	defer con.Close()
-	if queue == "" {
-		return errors.New("queue can not be empty")
-	}
 	reply, err := redis.Bytes(con.Do("LPOP", fmt.Sprintf("queues:%s", queue)))
 	if err != nil {
 		return err
@@ -86,19 +83,14 @@ func (b *Broker) GetJob(queue string, job *core.Job) error {
 
 }
 
-func (b *Broker) QueueMonitors() []core.QueueStatus {
+func (b *Broker) Length(queue string) int {
 	con := b.pool.Get()
 	defer con.Close()
-	var queueStatus core.QueueStatus
-	queues, _ := redis.Strings(con.Do("SMEMBERS", "queues"))
-	queueStatusList := make([]core.QueueStatus, len(queues))
-	for i, queue := range queues {
-		length, _ := redis.Int(con.Do("LLEN", fmt.Sprintf("queues:%s", queue)))
-		queueStatus.Queue = queue
-		queueStatus.Length = length
-		queueStatusList[i] = queueStatus
+	length, err := redis.Int(con.Do("LLEN", queue))
+	if err != nil {
+		return 0
 	}
-	return queueStatusList
+	return length
 }
 
 // register redis broker when module init
