@@ -46,13 +46,13 @@ func (s *Saver) Close() error {
 }
 
 func (s *Saver) PublishTask(t *core.Task) error {
-	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, frequency, func) VALUES (?, ?, ?, ?, ?)`,
-		t.TaskId, t.Args, time.Now(), t.Frequency, t.Func).Exec(); err != nil {
+	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, period, func) VALUES (?, ?, ?, ?, ?)`,
+		t.TaskId, t.Args, time.Now(), t.Period, t.Func).Exec(); err != nil {
 		return err
 	}
 	batch := s.session.NewBatch(gocql.CounterBatch)
-	if t.Frequency > 0 {
-		batch.Query(`UPDATE frequencies SET count = count + 1 WHERE frequency = ?`, t.Frequency)
+	if t.Period > 0 {
+		batch.Query(`UPDATE periods SET count = count + 1 WHERE period = ?`, t.Period)
 	}
 	batch.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, t.Func)
 	if err := s.session.ExecuteBatch(batch); err != nil {
@@ -69,15 +69,15 @@ func (s *Saver) PublishJob(t *core.Job) error {
 	return nil
 }
 
-func (s *Saver) Frequencies() []int {
-	var frequencyList []int
-	var frequency int
-	iter := s.session.Query(`SELECT frequency FROM frequencies`).Iter()
-	for iter.Scan(&frequency) {
-		frequencyList = append(frequencyList, frequency)
+func (s *Saver) Periods() []int {
+	var periodList []int
+	var period int
+	iter := s.session.Query(`SELECT period FROM periods`).Iter()
+	for iter.Scan(&period) {
+		periodList = append(periodList, period)
 	}
 	iter.Close()
-	return frequencyList
+	return periodList
 }
 
 func (s *Saver) Queues() []string {
@@ -91,10 +91,10 @@ func (s *Saver) Queues() []string {
 	return queueList
 }
 
-func (s *Saver) GetTimingTask(frequency int, tasks chan core.Task) {
+func (s *Saver) GetPeriodicTask(period int, tasks chan core.Task) {
 	var task core.Task
-	iter := s.session.Query(`SELECT task_id, args, frequency, func FROM tasks WHERE frequency = ?`, frequency).Iter()
-	for iter.Scan(&task.TaskId, &task.Args, &task.Frequency, &task.Func) {
+	iter := s.session.Query(`SELECT task_id, args, period, func FROM tasks WHERE period = ?`, period).Iter()
+	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func) {
 		tasks <- task
 	}
 	close(tasks)
@@ -116,8 +116,8 @@ func (s *Saver) TaskList(taskList *core.TaskList) error {
 	if err != nil {
 		return err
 	}
-	iter := s.session.Query(`SELECT task_id, args, frequency, func FROM tasks`).PageSize(PAGE_SIZE).PageState(stateByte).Iter()
-	for iter.Scan(&task.TaskId, &task.Args, &task.Frequency, &task.Func) {
+	iter := s.session.Query(`SELECT task_id, args, period, func FROM tasks`).PageSize(PAGE_SIZE).PageState(stateByte).Iter()
+	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func) {
 		tasks = append(tasks, task)
 		i++
 	}

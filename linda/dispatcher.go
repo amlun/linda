@@ -37,11 +37,11 @@ func (d *dispatcher) Close() {
 	d.saver.Close()
 }
 
-// push a [frequency] task to saver
+// push a [period] task to saver
 func (d *dispatcher) PushTask(task core.Task) error {
 	err := d.saver.PublishTask(&task)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("push task to saver error [%s]", err)
 		return err
 	}
 	log.WithField("task", task).Info("push task to saver")
@@ -52,13 +52,13 @@ func (d *dispatcher) PushTask(task core.Task) error {
 func (d *dispatcher) PushJob(job core.Job) error {
 	err := d.broker.PushJob(&job)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("push job to broker error [%s]", err)
 		return err
 	}
 	log.WithField("job", job).Info("push job to broker")
 	err = d.saver.PublishJob(&job)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("push job to saver error [%s]", err)
 		return err
 	}
 	log.WithField("job", job).Info("push job to saver")

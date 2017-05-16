@@ -1,10 +1,10 @@
 package core
 
 type Task struct {
-	TaskId    string   `json:"task_id"`
-	Frequency int      `json:"frequency"`
-	Func      string   `json:"func"`
-	Args      []string `json:"args"`
+	TaskId string   `json:"task_id"`
+	Period int      `json:"period"`
+	Func   string   `json:"func"`
+	Args   []string `json:"args"`
 }
 
 type TaskList struct {

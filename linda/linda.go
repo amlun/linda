@@ -35,13 +35,13 @@ func (l *Linda) Close() {
 	l.dispatcher.Close()
 }
 
-// schedule jobs with frequency
-func (l *Linda) Schedule(frequency int) func() {
+// schedule jobs with period
+func (l *Linda) Schedule(period int) func() {
 	return func() {
 		var job core.Job
 		tasks := make(chan core.Task)
 		go func() {
-			l.saver.GetTimingTask(frequency, tasks)
+			l.saver.GetPeriodicTask(period, tasks)
 		}()
 		for task := range tasks {
 			l.saver.ScheduleTask(task.TaskId)
@@ -49,13 +49,13 @@ func (l *Linda) Schedule(frequency int) func() {
 			job.Task = task
 			l.PushJob(job)
 		}
-		log.WithField("frequency", frequency).Info("schedule the job with frequency")
+		log.WithField("period", period).Info("schedule the job with period")
 	}
 }
 
 // schedule list
-func (l *Linda) Schedules() []int {
-	return l.saver.Frequencies()
+func (l *Linda) Periods() []int {
+	return l.saver.Periods()
 }
 
 // get all task queues and monitor

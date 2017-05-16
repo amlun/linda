@@ -90,7 +90,7 @@ HTTP method: `POST`
 
 Host/port: `http://localhost:8081/api/task`
 
-Request Parameters: `Func=test&Args=a&Args=b&Args=c&Frequency=100000000000`
+Request Parameters: `Func=test&Args=a&Args=b&Args=c&Period=100`
 
 #### Get A Job
 HTTP method: `GET`

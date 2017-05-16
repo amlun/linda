@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-var result Result
-
 type api struct {
 	linda *linda.Linda
 }
@@ -41,8 +39,8 @@ func (a *api) pushTask() gin.HandlerFunc {
 		if task.Func == "" {
 			panic("Func can not be empty")
 		}
-		if task.Frequency > 0 && task.Frequency < 60 {
-			panic("Frequency too quickly, at least one minute")
+		if task.Period > 0 && task.Period < 60 {
+			panic("Period too quickly, at least one minute")
 		}
 		err = a.linda.PushTask(task)
 		if err != nil {
@@ -56,8 +54,11 @@ func (a *api) pushTask() gin.HandlerFunc {
 		if err != nil {
 			panic(err)
 		}
-		result.Data = task
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, Result{
+			Code: 200,
+			Msg:  "ok",
+			Data: task,
+		})
 	}
 }
 
@@ -68,14 +69,22 @@ func (a *api) getJob() gin.HandlerFunc {
 			panic("queue can not be empty")
 		}
 		job := a.linda.GetJob(queue)
-		c.JSON(http.StatusOK, job)
+		c.JSON(http.StatusOK, Result{
+			Code: 200,
+			Msg:  "ok",
+			Data: job,
+		})
 	}
 }
 
 func (a *api) queuesStatus() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		result := a.linda.MonitorQueues()
-		c.JSON(http.StatusOK, result)
+		queueStatus := a.linda.MonitorQueues()
+		c.JSON(http.StatusOK, Result{
+			Code: 200,
+			Msg:  "ok",
+			Data: queueStatus,
+		})
 	}
 }
 
@@ -86,6 +95,10 @@ func (a *api) tasks() gin.HandlerFunc {
 		if err := a.linda.TaskList(&taskList); err != nil {
 			panic(err)
 		}
-		c.JSON(http.StatusOK, taskList)
+		c.JSON(http.StatusOK, Result{
+			Code: 200,
+			Msg:  "ok",
+			Data: taskList,
+		})
 	}
 }

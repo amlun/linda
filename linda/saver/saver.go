@@ -11,9 +11,9 @@ type Saver interface {
 	Close() error
 	PublishTask(t *core.Task) error
 	PublishJob(t *core.Job) error
-	Frequencies() []int
+	Periods() []int
 	Queues() []string
-	GetTimingTask(frequency int, tasks chan core.Task)
+	GetPeriodicTask(period int, tasks chan core.Task)
 	ScheduleTask(id string) error
 	TaskList(taskList *core.TaskList) error
 }
