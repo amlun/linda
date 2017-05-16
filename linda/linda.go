@@ -46,9 +46,7 @@ func (l *Linda) Schedule(frequency int) func() {
 		for task := range tasks {
 			l.saver.ScheduleTask(task.TaskId)
 			job.JobId = uuid.NewV4().String()
-			job.TaskId = task.TaskId
-			job.Func = task.Func
-			job.Args = task.Args
+			job.Task = task
 			l.PushJob(job)
 		}
 		log.Printf("schedule the job with frequency [%d] seconds", frequency)
