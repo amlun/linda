@@ -25,7 +25,7 @@ func NewLinda(config *Config) *Linda {
 		},
 	}
 	if l.dispatcher.Init() != nil {
-		Logger.Panic("Linda dispatcher init failed")
+		panic("Linda dispatcher Init failed")
 	}
 	return l
 }
@@ -48,7 +48,7 @@ func (l *Linda) Schedule(period int) func() {
 			job.Task = task
 			l.PushJob(job)
 		}
-		Logger.WithField("period", period).Info("schedule the job with period")
+		Logger.WithField("action", "Schedule").WithField("period", period).Info("ok")
 	}
 }
 
