@@ -64,16 +64,21 @@ func (a *api) pushTask() gin.HandlerFunc {
 
 func (a *api) getJob() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var result = Result{
+			Code: 404,
+			Msg:  "not found",
+		}
 		queue := c.Query("queue")
 		if queue == "" {
 			panic("queue can not be empty")
 		}
 		job := a.linda.GetJob(queue)
-		c.JSON(http.StatusOK, Result{
-			Code: 200,
-			Msg:  "ok",
-			Data: job,
-		})
+		if job.JobId != "" {
+			result.Code = 200
+			result.Msg = "ok"
+			result.Data = job
+		}
+		c.JSON(http.StatusOK, result)
 	}
 }
 
