@@ -46,7 +46,7 @@ func (s *Saver) Close() error {
 }
 
 func (s *Saver) PublishTask(t *core.Task) error {
-	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, period, func) VALUES (?, ?, ?, ?, ?)`,
+	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, period, func) VALUES (?, ?, ?, ?, ?) IF NOT EXISTS`,
 		t.TaskId, t.Args, time.Now(), t.Period, t.Func).Exec(); err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (s *Saver) PublishTask(t *core.Task) error {
 }
 
 func (s *Saver) PublishJob(t *core.Job) error {
-	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id) VALUES (?, ?, ?, ?, ?, ?)`,
+	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
 		t.JobId, t.Args, t.Func, t.RunTime, t.Status, t.TaskId).Exec(); err != nil {
 		return err
 	}
