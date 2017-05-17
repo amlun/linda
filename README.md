@@ -20,13 +20,16 @@ to install the dependency packages
 
 ## Getting Started
 
-### Introduction
+### Terminology
 
 * Broker
 > message transport [MQ]
 
 * Saver
 > backend to store all things
+
+* Queues
+> receive job and send to exchanges
 
 * Task
 > template of job

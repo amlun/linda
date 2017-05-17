@@ -50,14 +50,6 @@ func (s *Saver) PublishTask(t *core.Task) error {
 		t.TaskId, t.Args, time.Now(), t.Period, t.Func).Exec(); err != nil {
 		return err
 	}
-	batch := s.session.NewBatch(gocql.CounterBatch)
-	if t.Period > 0 {
-		batch.Query(`UPDATE periods SET count = count + 1 WHERE period = ?`, t.Period)
-	}
-	batch.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, t.Func)
-	if err := s.session.ExecuteBatch(batch); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -89,6 +81,19 @@ func (s *Saver) Queues() []string {
 	}
 	iter.Close()
 	return queueList
+}
+
+func (s *Saver) UpdateQueue(queue string) error {
+	if err := s.session.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, queue).Exec(); err != nil {
+		return err
+	}
+	return nil
+}
+func (s *Saver) UpdatePeriod(period int) error {
+	if err := s.session.Query(`UPDATE periods SET count = count + 1 WHERE period = ?`, period).Exec(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *Saver) GetPeriodicTask(period int, tasks chan core.Task) {

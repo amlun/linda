@@ -42,7 +42,7 @@ func (b *Broker) Close() error {
 	return b.pool.Close()
 }
 
-func (b *Broker) PushJob(job *core.Job) error {
+func (b *Broker) PushJob(queue string, job *core.Job) error {
 	job.RunTime = time.Now()
 	bytes, err := json.Marshal(job)
 	if err != nil {
@@ -50,7 +50,6 @@ func (b *Broker) PushJob(job *core.Job) error {
 	}
 	con := b.pool.Get()
 	defer con.Close()
-	queue := job.Func
 	if queue == "" {
 		return errors.New("queue can not be empty")
 	}

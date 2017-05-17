@@ -13,6 +13,8 @@ type Saver interface {
 	PublishJob(t *core.Job) error
 	Periods() []int
 	Queues() []string
+	UpdateQueue(queue string) error
+	UpdatePeriod(period int) error
 	GetPeriodicTask(period int, tasks chan core.Task)
 	ScheduleTask(id string) error
 	TaskList(taskList *core.TaskList) error

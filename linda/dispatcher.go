@@ -36,40 +36,53 @@ func (d *dispatcher) Close() {
 
 // push a [period] task to saver
 func (d *dispatcher) PushTask(task core.Task) error {
+	log := Logger.WithField("action", "PushTask").WithField("task", task)
 	err := d.saver.PublishTask(&task)
 	if err != nil {
-		Logger.WithField("action", "PushTask").Errorf("push task error: [%s]", err)
+		log.Errorf("push task error: [%s]", err)
 		return err
 	}
-	Logger.WithField("action", "PushTask").WithField("task", task).Info("ok")
+	if task.Period > 0 {
+		d.saver.UpdatePeriod(task.Period)
+	}
+	log.Info("ok")
 	return nil
 }
 
 // push a job to broker and saver
 func (d *dispatcher) PushJob(job core.Job) error {
+	queue := d.queue(&job)
+	log := Logger.WithField("action", "PushJob").WithField("job", job).WithField("queue", queue)
 	err := d.saver.PublishJob(&job)
 	if err != nil {
-		Logger.WithField("action", "PushJob").Errorf("push job to saver error: [%s]", err)
+		log.Errorf("push job to saver error: [%s]", err)
 		return err
 	}
-	err = d.broker.PushJob(&job)
+	err = d.broker.PushJob(queue, &job)
 	if err != nil {
-		Logger.WithField("action", "PushJob").Errorf("push job to broker error: [%s]", err)
+		log.Errorf("push job to broker error: [%s]", err)
 		return err
 	}
-	Logger.WithField("action", "PushJob").WithField("job", job).Info("ok")
+	log.Info("ok")
 	return nil
+}
+
+// return a queue name
+func (d *dispatcher) queue(job *core.Job) string {
+	queue := job.Func
+	d.saver.UpdateQueue(queue)
+	return queue
 }
 
 // get a job and delete it from the queue
 func (d *dispatcher) GetJob(queue string) core.Job {
 	var job core.Job
+	log := Logger.WithField("action", "GetJob").WithField("queue", queue)
 	err := d.broker.GetJob(queue, &job)
 	if err != nil {
-		Logger.WithField("action", "GetJob").Errorf("get job error: [%s]", err)
-	} else {
-		Logger.WithField("action", "GetJob").WithField("job", job).Info("ok")
+		log.Errorf("get job error: [%s]", err)
 	}
+	log.WithField("job", job).Info("ok")
 	return job
 
 }
