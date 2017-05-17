@@ -99,6 +99,40 @@ Host/port: `http://localhost:8081/api/job`
 
 Request Parameters: `queue=test`
 
+### Job in Queue
+
+```json
+{
+    "job_id": "9964015c-a96c-4e48-aad6-985ab8dc1888",
+    "run_time": "2017-05-17T14:19:50.355512848+08:00",
+    "delay": 0,
+    "status": 0,
+    "task_id": "57354766-93f6-43eb-8b86-a4bc2b547cf8",
+    "period": 100,
+    "func": "test",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}
+```
+The only useful field is `args`, because `func` is same with `queue` name.
+
+Clients fetch jobs from `queue`, and then handle it with `args`.
+
+And then update the job status. @TODO
+
+Job_Status:
+
+```
+	PENDING = iota
+	STARTED 
+	RETRY   
+	SUCCESS 
+	FAILURE 
+```
+
 ## Features
 
 ### Broker List
