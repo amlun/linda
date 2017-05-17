@@ -156,6 +156,11 @@ Job_Status:
 
  - [x] Simple dispatcher with func as the queue
  - [ ] Manage a queue pool and support priority queue
+ 
+### Linda Scheduler
+
+ - [x] Simple scheduler with multi periods, one period with one schedule worker
+ - [ ] Distribute scheduler workers
 
 ### Broker List
 
