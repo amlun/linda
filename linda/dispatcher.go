@@ -18,13 +18,13 @@ type dispatcher struct {
 func (d *dispatcher) Init() error {
 	b, err := broker.NewBroker(d.brokerURL)
 	if err != nil {
-		logger.Error(err)
+		Logger.Error(err)
 		return err
 	}
 	d.broker = b
 	s, err := saver.NewSaver(d.saverURL)
 	if err != nil {
-		logger.Error(err)
+		Logger.Error(err)
 		return err
 	}
 	d.saver = s
@@ -40,10 +40,10 @@ func (d *dispatcher) Close() {
 func (d *dispatcher) PushTask(task core.Task) error {
 	err := d.saver.PublishTask(&task)
 	if err != nil {
-		logger.Errorf("push task to saver error [%s]", err)
+		Logger.Errorf("push task to saver error [%s]", err)
 		return err
 	}
-	logger.WithField("task", task).Info("push task to saver")
+	Logger.WithField("task", task).Info("push task to saver")
 	return nil
 }
 
@@ -51,16 +51,16 @@ func (d *dispatcher) PushTask(task core.Task) error {
 func (d *dispatcher) PushJob(job core.Job) error {
 	err := d.broker.PushJob(&job)
 	if err != nil {
-		logger.Errorf("push job to broker error [%s]", err)
+		Logger.Errorf("push job to broker error [%s]", err)
 		return err
 	}
-	logger.WithField("job", job).Info("push job to broker")
+	Logger.WithField("job", job).Info("push job to broker")
 	err = d.saver.PublishJob(&job)
 	if err != nil {
-		logger.Errorf("push job to saver error [%s]", err)
+		Logger.Errorf("push job to saver error [%s]", err)
 		return err
 	}
-	logger.WithField("job", job).Info("push job to saver")
+	Logger.WithField("job", job).Info("push job to saver")
 	return nil
 }
 
@@ -69,7 +69,7 @@ func (d *dispatcher) GetJob(queue string) core.Job {
 	var job core.Job
 	err := d.broker.GetJob(queue, &job)
 	if err != nil {
-		logger.Error(err)
+		Logger.Error(err)
 	}
 	return job
 

@@ -5,10 +5,10 @@ import (
 	"os"
 )
 
-var logger = log.New()
+var Logger = log.New()
 
 func init() {
 	log.SetLevel(log.DebugLevel)
-	logger.Out = os.Stdout
-	logger.Debug("init logger")
+	Logger.Out = os.Stdout
+	Logger.Debug("init Logger")
 }
