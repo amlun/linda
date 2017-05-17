@@ -86,7 +86,7 @@ func (b *Broker) GetJob(queue string, job *core.Job) error {
 func (b *Broker) Length(queue string) int {
 	con := b.pool.Get()
 	defer con.Close()
-	length, err := redis.Int(con.Do("LLEN", queue))
+	length, err := redis.Int(con.Do("LLEN", fmt.Sprintf("queues:%s", queue)))
 	if err != nil {
 		return 0
 	}
