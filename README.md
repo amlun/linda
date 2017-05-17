@@ -10,7 +10,7 @@ To install Linda, use
 
 `go get github.com/amlun/linda`
 
-to install the package, and then use
+to install the package, and then use [glide](https://glide.sh/)
 
 `glide install`
 
@@ -98,3 +98,37 @@ HTTP method: `GET`
 Host/port: `http://localhost:8081/api/job`
 
 Request Parameters: `queue=test`
+
+## Features
+
+### Broker List
+
+ - [x] Redis
+ - [ ] Kafka
+ - [ ] RabbitMQ
+
+### Saver List
+
+ - [x] Cassandra
+ - [ ] Redis
+ - [ ] Mysql
+ 
+### Web UI
+
+ - [ ] Task List & Manage
+ - [ ] Job List & Manage
+ - [ ] Queue List & Manage & Monitor
+ - [ ] Periods Manage / Cron Jobs
+ - [ ] Data Statistics
+ 
+### Clients
+ - [x] HTTP API
+ - [ ] Go
+ - [ ] Python
+ 
+## Thanks
+
+* [redigo](https://github.com/garyburd/redigo)
+* [gocql](https://github.com/gocql/gocql)
+* [scheduler](https://github.com/carlescere/scheduler)
+* [Gin](https://github.com/gin-gonic/gin)
