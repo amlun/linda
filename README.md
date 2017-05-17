@@ -1,8 +1,10 @@
 # Linda
 
-Linda is a dispatcher and scheduler system.It allows you to save tasks and push a job of this task into a queue.
+Linda is a simple dispatcher and scheduler system.
 
-Linda is based on redis and cassandra, and it will support more backend.
+Linda has several tools/apis to manage tasks and jobs.
+
+It allows you to save tasks to saver[DB] and push jobs to broker[MQ].
 
 ## Installation
 
@@ -17,6 +19,21 @@ to install the package, and then use [glide](https://glide.sh/)
 to install the dependency packages
 
 ## Getting Started
+
+### Introduction
+
+* Broker
+> message transport [MQ]
+
+* Saver
+> backend to store all things
+
+* Task
+> template of job
+
+* Job
+> job is a callable class/function with args 
+
 
 ### Simple Usage
 
@@ -72,7 +89,7 @@ Use
 
 `go run apps/scheduler.go`
 
-to start scheduler to schedule the timing task.
+to start scheduler to schedule the periodic task.
 
 
 ### API Doc
@@ -134,6 +151,11 @@ Job_Status:
 ```
 
 ## Features
+
+### Linda Dispatcher
+
+ - [x] Simple dispatcher with func as the queue
+ - [ ] Manage a queue pool and support priority queue
 
 ### Broker List
 
