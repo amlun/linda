@@ -47,14 +47,14 @@ func (d *dispatcher) PushTask(task core.Task) error {
 
 // push a job to broker and saver
 func (d *dispatcher) PushJob(job core.Job) error {
-	err := d.broker.PushJob(&job)
-	if err != nil {
-		Logger.WithField("action", "PushJob").Errorf("push job to broker error: [%s]", err)
-		return err
-	}
-	err = d.saver.PublishJob(&job)
+	err := d.saver.PublishJob(&job)
 	if err != nil {
 		Logger.WithField("action", "PushJob").Errorf("push job to saver error: [%s]", err)
+		return err
+	}
+	err = d.broker.PushJob(&job)
+	if err != nil {
+		Logger.WithField("action", "PushJob").Errorf("push job to broker error: [%s]", err)
 		return err
 	}
 	Logger.WithField("action", "PushJob").WithField("job", job).Info("ok")
