@@ -2,7 +2,6 @@ package linda
 
 import (
 	"github.com/amlun/linda/linda/core"
-	log "github.com/sirupsen/logrus"
 	"github.com/twinj/uuid"
 )
 
@@ -26,7 +25,7 @@ func NewLinda(config *Config) *Linda {
 		},
 	}
 	if l.dispatcher.Init() != nil {
-		log.Panic("Linda dispatcher init failed")
+		logger.Panic("Linda dispatcher init failed")
 	}
 	return l
 }
@@ -38,18 +37,18 @@ func (l *Linda) Close() {
 // schedule jobs with period
 func (l *Linda) Schedule(period int) func() {
 	return func() {
-		var job core.Job
 		tasks := make(chan core.Task)
 		go func() {
 			l.saver.GetPeriodicTask(period, tasks)
 		}()
+		var job core.Job
 		for task := range tasks {
 			l.saver.ScheduleTask(task.TaskId)
 			job.JobId = uuid.NewV4().String()
 			job.Task = task
 			l.PushJob(job)
 		}
-		log.WithField("period", period).Info("schedule the job with period")
+		logger.WithField("period", period).Info("schedule the job with period")
 	}
 }
 

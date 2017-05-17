@@ -6,7 +6,6 @@ import (
 	"github.com/amlun/linda/linda/core"
 	"github.com/amlun/linda/linda/saver"
 	_ "github.com/amlun/linda/linda/saver/cassandra"
-	log "github.com/sirupsen/logrus"
 )
 
 type dispatcher struct {
@@ -19,13 +18,13 @@ type dispatcher struct {
 func (d *dispatcher) Init() error {
 	b, err := broker.NewBroker(d.brokerURL)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 		return err
 	}
 	d.broker = b
 	s, err := saver.NewSaver(d.saverURL)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 		return err
 	}
 	d.saver = s
@@ -41,10 +40,10 @@ func (d *dispatcher) Close() {
 func (d *dispatcher) PushTask(task core.Task) error {
 	err := d.saver.PublishTask(&task)
 	if err != nil {
-		log.Errorf("push task to saver error [%s]", err)
+		logger.Errorf("push task to saver error [%s]", err)
 		return err
 	}
-	log.WithField("task", task).Info("push task to saver")
+	logger.WithField("task", task).Info("push task to saver")
 	return nil
 }
 
@@ -52,16 +51,16 @@ func (d *dispatcher) PushTask(task core.Task) error {
 func (d *dispatcher) PushJob(job core.Job) error {
 	err := d.broker.PushJob(&job)
 	if err != nil {
-		log.Errorf("push job to broker error [%s]", err)
+		logger.Errorf("push job to broker error [%s]", err)
 		return err
 	}
-	log.WithField("job", job).Info("push job to broker")
+	logger.WithField("job", job).Info("push job to broker")
 	err = d.saver.PublishJob(&job)
 	if err != nil {
-		log.Errorf("push job to saver error [%s]", err)
+		logger.Errorf("push job to saver error [%s]", err)
 		return err
 	}
-	log.WithField("job", job).Info("push job to saver")
+	logger.WithField("job", job).Info("push job to saver")
 	return nil
 }
 
@@ -70,7 +69,7 @@ func (d *dispatcher) GetJob(queue string) core.Job {
 	var job core.Job
 	err := d.broker.GetJob(queue, &job)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 	return job
 

@@ -32,6 +32,7 @@ func Recovery() gin.HandlerFunc {
 func RecoveryWithJson() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
+			var result Result
 			if err := recover(); err != nil {
 				result.Code = http.StatusInternalServerError
 				result.Msg = fmt.Sprintf("%s", err)
