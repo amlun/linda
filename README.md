@@ -31,6 +31,9 @@ to install the dependency packages
 * Queues
 > receive job and send to exchanges
 
+* Periods
+> period of the task
+
 * Task
 > template of job
 
