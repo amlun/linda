@@ -45,7 +45,9 @@ func (l *Linda) Schedule(period int) func() {
 		for task := range tasks {
 			l.saver.ScheduleTask(task.TaskId)
 			job.JobId = uuid.NewV4().String()
-			job.Task = task
+			job.TaskId = task.TaskId
+			job.Queue = task.Queue
+			job.Payload = task.Payload
 			l.PushJob(job)
 		}
 		Logger.WithField("action", "Schedule").WithField("period", period).Info("ok")

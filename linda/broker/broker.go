@@ -9,7 +9,7 @@ import (
 type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
-	PushJob(queue string, job *core.Job) error
+	PushJob(job *core.Job) error
 	GetJob(queue string, job *core.Job) error
 	Length(queue string) int
 }

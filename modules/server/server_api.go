@@ -47,8 +47,10 @@ func (a *api) pushTask() gin.HandlerFunc {
 			panic(err)
 		}
 		var job = core.Job{
-			JobId: uuid.NewV4().String(),
-			Task:  task,
+			JobId:   uuid.NewV4().String(),
+			TaskId:  task.TaskId,
+			Queue:   task.Queue,
+			Payload: task.Payload,
 		}
 		err = a.linda.PushJob(job)
 		if err != nil {

@@ -171,6 +171,7 @@ Job_Status:
 ### Broker List
 
  - [x] Redis
+ - [ ] NSQ
  - [ ] Kafka
  - [ ] RabbitMQ
 

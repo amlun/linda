@@ -42,9 +42,6 @@ func (d *dispatcher) PushTask(task core.Task) error {
 		log.Errorf("push task error: [%s]", err)
 		return err
 	}
-	if task.Period > 0 {
-		d.saver.UpdatePeriod(task.Period)
-	}
 	log.Info("ok")
 	return nil
 }
@@ -57,22 +54,13 @@ func (d *dispatcher) PushJob(job core.Job) error {
 		log.Errorf("push job to saver error: [%s]", err)
 		return err
 	}
-	queue := d.queue(&job)
-	log = log.WithField("queue", queue)
-	err = d.broker.PushJob(queue, &job)
+	err = d.broker.PushJob(&job)
 	if err != nil {
 		log.Errorf("push job to broker error: [%s]", err)
 		return err
 	}
 	log.Info("ok")
 	return nil
-}
-
-// return a queue name
-func (d *dispatcher) queue(job *core.Job) string {
-	queue := job.Func
-	d.saver.UpdateQueue(queue)
-	return queue
 }
 
 // get a job and delete it from the queue

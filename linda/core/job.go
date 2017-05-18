@@ -7,7 +7,9 @@ type Job struct {
 	RunTime time.Time `json:"run_time"`
 	Delay   int       `json:"delay"`
 	Status  int       `json:"status"`
-	Task
+	TaskId  string    `json:"task_id"`
+	Queue   string    `json:"queue"`
+	Payload
 }
 
 //const (

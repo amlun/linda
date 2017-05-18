@@ -19,6 +19,7 @@ func New(linda *linda.Linda) *scheduler {
 // will support distribute deploy
 // use redis or zookeeper to lock ,one master with multi slave
 func (s *scheduler) Start() {
+	// register()
 	quit := signals()
 	list := s.linda.Periods()
 	for _, period := range list {

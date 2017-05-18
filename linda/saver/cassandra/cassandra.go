@@ -46,18 +46,22 @@ func (s *Saver) Close() error {
 }
 
 func (s *Saver) PublishTask(t *core.Task) error {
-	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, period, func) VALUES (?, ?, ?, ?, ?) IF NOT EXISTS`,
-		t.TaskId, t.Args, time.Now(), t.Period, t.Func).Exec(); err != nil {
+	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, period, func, queue) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
+		t.TaskId, t.Args, time.Now(), t.Period, t.Func, t.Queue).Exec(); err != nil {
 		return err
+	}
+	if t.Period > 0 {
+		s.session.Query(`UPDATE periods SET count = count + 1 WHERE period = ?`, t.Period).Exec()
 	}
 	return nil
 }
 
 func (s *Saver) PublishJob(t *core.Job) error {
-	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
-		t.JobId, t.Args, t.Func, t.RunTime, t.Status, t.TaskId).Exec(); err != nil {
+	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id, queue) VALUES (?, ?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
+		t.JobId, t.Args, t.Func, t.RunTime, t.Status, t.TaskId, t.Queue).Exec(); err != nil {
 		return err
 	}
+	s.session.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, t.Queue).Exec()
 	return nil
 }
 
@@ -83,23 +87,10 @@ func (s *Saver) Queues() []string {
 	return queueList
 }
 
-func (s *Saver) UpdateQueue(queue string) error {
-	if err := s.session.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, queue).Exec(); err != nil {
-		return err
-	}
-	return nil
-}
-func (s *Saver) UpdatePeriod(period int) error {
-	if err := s.session.Query(`UPDATE periods SET count = count + 1 WHERE period = ?`, period).Exec(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *Saver) GetPeriodicTask(period int, tasks chan core.Task) {
 	var task core.Task
-	iter := s.session.Query(`SELECT task_id, args, period, func FROM tasks WHERE period = ?`, period).Iter()
-	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func) {
+	iter := s.session.Query(`SELECT task_id, args, period, func, queue FROM tasks WHERE period = ?`, period).Iter()
+	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func, &task.Queue) {
 		tasks <- task
 	}
 	close(tasks)
@@ -121,8 +112,8 @@ func (s *Saver) TaskList(taskList *core.TaskList) error {
 	if err != nil {
 		return err
 	}
-	iter := s.session.Query(`SELECT task_id, args, period, func FROM tasks`).PageSize(PAGE_SIZE).PageState(stateByte).Iter()
-	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func) {
+	iter := s.session.Query(`SELECT task_id, args, period, func, queue FROM tasks`).PageSize(PAGE_SIZE).PageState(stateByte).Iter()
+	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func, &task.Queue) {
 		tasks = append(tasks, task)
 		i++
 	}
