@@ -17,15 +17,19 @@ func NewLinda(config *Config) *Linda {
 	if config.SaverURL == "" {
 		config.SaverURL = "cassandra://localhost:9042/linda"
 	}
+	if config.SmarterURL == "" {
+		config.SmarterURL = "redis://localhost:6379"
+	}
 	l := &Linda{
 		config: config,
 		dispatcher: dispatcher{
-			brokerURL: config.BrokerURL,
-			saverURL:  config.SaverURL,
+			brokerURL:  config.BrokerURL,
+			saverURL:   config.SaverURL,
+			smarterURL: config.SmarterURL,
 		},
 	}
-	if l.dispatcher.Init() != nil {
-		panic("Linda dispatcher Init failed")
+	if err := l.dispatcher.Init(); err != nil {
+		panic(err)
 	}
 	return l
 }

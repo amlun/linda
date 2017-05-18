@@ -25,6 +25,9 @@ to install the dependency packages
 * Broker
 > message transport [MQ]
 
+* Smarter
+> save scheduled tasks and schedule them
+
 * Saver
 > backend to store all things
 
@@ -57,6 +60,7 @@ func main() {
 	var config = linda.Config{
 		BrokerURL: "redis://127.0.0.1:6379",
 		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
+		SmarterURL: "redis://127.0.0.1:6379",
 	}
 	l := linda.NewLinda(&config)
 	defer l.Close()
@@ -76,6 +80,7 @@ func main() {
 	var config = linda.Config{
 		BrokerURL: "redis://127.0.0.1:6379",
 		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
+		SmarterURL: "redis://127.0.0.1:6379",
 	}
 	l := linda.NewLinda(&config)
 	defer l.Close()

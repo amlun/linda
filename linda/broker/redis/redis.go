@@ -43,7 +43,6 @@ func (b *Broker) Close() error {
 }
 
 func (b *Broker) PushJob(job *core.Job) error {
-	job.RunTime = time.Now()
 	bytes, err := json.Marshal(job)
 	if err != nil {
 		return err
@@ -53,8 +52,7 @@ func (b *Broker) PushJob(job *core.Job) error {
 	if job.Queue == "" {
 		return errors.New("queue can not be empty")
 	}
-	_, err = con.Do("RPUSH", fmt.Sprintf("queues:%s", job.Queue), bytes)
-	if err != nil {
+	if _, err = con.Do("RPUSH", fmt.Sprintf("linda:queues:%s", job.Queue), bytes); err != nil {
 		return err
 	}
 	//if job.Delay == 0 {
@@ -67,25 +65,59 @@ func (b *Broker) PushJob(job *core.Job) error {
 	return nil
 }
 
-func (b *Broker) GetJob(queue string, job *core.Job) error {
+func (b *Broker) GetJob(queue string) (*core.Job, error) {
+	var job *core.Job
 	con := b.pool.Get()
 	defer con.Close()
-	reply, err := redis.Bytes(con.Do("LPOP", fmt.Sprintf("queues:%s", queue)))
+	reply, err := redis.Bytes(con.Do("LPOP", fmt.Sprintf("linda:queues:%s", queue)))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = json.Unmarshal(reply, job)
+	if reply == nil {
+		return nil, errors.New("no job")
+	}
+	err = json.Unmarshal(reply, &job)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return job, nil
+}
 
+//func (b *Broker) PushTask(task *core.Task) error {
+//	bytes, err := json.Marshal(task)
+//	if err != nil {
+//		return err
+//	}
+//	con := b.pool.Get()
+//	defer con.Close()
+//	if _, err = con.Do("SADD", "linda:tasks", bytes); err != nil {
+//		return err
+//	}
+//	return nil
+//}
+
+func (b *Broker) GetTask() (*core.Task, error) {
+	var task *core.Task
+	con := b.pool.Get()
+	defer con.Close()
+	reply, err := redis.Bytes(con.Do("SPOP", "linda:tasks"))
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("no task")
+	}
+	err = json.Unmarshal(reply, &task)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 func (b *Broker) Length(queue string) int {
 	con := b.pool.Get()
 	defer con.Close()
-	length, err := redis.Int(con.Do("LLEN", fmt.Sprintf("queues:%s", queue)))
+	length, err := redis.Int(con.Do("LLEN", fmt.Sprintf("linda:queues:%s", queue)))
 	if err != nil {
 		return 0
 	}

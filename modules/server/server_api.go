@@ -46,16 +46,6 @@ func (a *api) pushTask() gin.HandlerFunc {
 		if err != nil {
 			panic(err)
 		}
-		var job = core.Job{
-			JobId:   uuid.NewV4().String(),
-			TaskId:  task.TaskId,
-			Queue:   task.Queue,
-			Payload: task.Payload,
-		}
-		err = a.linda.PushJob(job)
-		if err != nil {
-			panic(err)
-		}
 		c.JSON(http.StatusOK, Result{
 			Code: 200,
 			Msg:  "ok",
@@ -66,21 +56,19 @@ func (a *api) pushTask() gin.HandlerFunc {
 
 func (a *api) getJob() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var result = Result{
-			Code: 404,
-			Msg:  "not found",
-		}
 		queue := c.Query("queue")
 		if queue == "" {
 			panic("queue can not be empty")
 		}
-		job := a.linda.GetJob(queue)
-		if job.JobId != "" {
-			result.Code = 200
-			result.Msg = "ok"
-			result.Data = job
+		job, err := a.linda.GetJob(queue)
+		if err != nil {
+			panic(err)
 		}
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, Result{
+			Code: 200,
+			Msg:  "ok",
+			Data: job,
+		})
 	}
 }
 

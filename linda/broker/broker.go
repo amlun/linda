@@ -10,7 +10,8 @@ type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
 	PushJob(job *core.Job) error
-	GetJob(queue string, job *core.Job) error
+	//PushTask(task *core.Task) error
+	GetJob(queue string) (*core.Job, error)
 	Length(queue string) int
 }
 
