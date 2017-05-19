@@ -2,7 +2,6 @@ package linda
 
 import (
 	"github.com/amlun/linda/linda/core"
-	"github.com/twinj/uuid"
 )
 
 // push a [period] task to saver
@@ -21,11 +20,6 @@ func (l *Linda) PushTask(task core.Task) error {
 	}
 	log.Info("ok")
 	return nil
-}
-
-func (l *Linda) Schedule() (string, error) {
-	Logger.Info("schedule task from smarter")
-	return l.smarter.GetTask()
 }
 
 func (l *Linda) GetTask(taskId string) (*core.Task, error) {
@@ -73,17 +67,6 @@ func (l *Linda) GetJob(queue string) (*core.Job, error) {
 	}
 	log.WithField("job", job).Info("ok")
 	return job, nil
-}
-
-func (l *Linda) ScheduleTask(task *core.Task) func() {
-	return func() {
-		var job core.Job
-		job.JobId = uuid.NewV4().String()
-		job.TaskId = task.TaskId
-		job.Queue = task.Queue
-		job.Payload = task.Payload
-		l.PushJob(job)
-	}
 }
 
 // get task list

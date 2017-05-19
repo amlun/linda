@@ -174,8 +174,7 @@ Job_Status:
  
 ### Linda Scheduler
 
- - [x] Simple scheduler with multi periods, one period with one schedule worker
- - [ ] Distribute scheduler workers
+ - [x] Distribute scheduler workers
 
 ### Broker List
 
@@ -189,6 +188,12 @@ Job_Status:
  - [x] Cassandra
  - [ ] Redis
  - [ ] Mysql
+ 
+### Smarter List
+
+ - [x] Redis
+ - [ ] Zookeeper
+ - [ ] etcd
  
 ### Web UI
 
