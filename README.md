@@ -6,6 +6,10 @@ Linda has several tools/apis to manage tasks and jobs.
 
 It allows you to save tasks to saver[DB] and push jobs to broker[MQ].
 
+## Design
+
+[Design](design)
+
 ## Installation
 
 To install Linda, use 
@@ -78,15 +82,16 @@ import (
 
 func main() {
 	var config = linda.Config{
-		BrokerURL: "redis://127.0.0.1:6379",
-		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
-		SmarterURL: "redis://127.0.0.1:6379",
-	}
+    		BrokerURL: "redis://127.0.0.1:6379",
+    		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
+    		SmarterURL: "redis://127.0.0.1:6379",
+    	}
 	l := linda.NewLinda(&config)
 	defer l.Close()
-	s := scheduler.New(l)
-	s.Start()
+	s := scheduler.New()
+	s.Start(l)
 }
+
 
 ```
 
@@ -107,7 +112,6 @@ to start scheduler to schedule the periodic task.
 
  * GET /api/ping - Check the server if it is alive.
  * GET /api/tasks - List all tasks.
- * GET /api/queues - List all queues and its length.
  * GET /api/job - Get a job from queue, now it only implements a simple way to fetch a job.
  * POST /api/task - Post a task.
  
