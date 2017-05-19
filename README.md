@@ -105,7 +105,7 @@ Use
 
 `go run apps/scheduler.go`
 
-to start scheduler to schedule the periodic task.
+to start scheduler to schedule the periodic tasks.
 
 
 ### API Doc
