@@ -6,8 +6,12 @@ import (
 )
 
 func (l *Linda) Schedule() (string, error) {
-	Logger.Info("schedule task from smarter")
+	Logger.WithField("action", "Schedule").Info("schedule task success")
 	return l.smarter.GetTask()
+}
+
+func (l *Linda) ScheduleUpdate() {
+
 }
 
 func (l *Linda) ScheduleTask(task *core.Task) func() {

@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -30,9 +29,11 @@ func newPoller() (*poller, error) {
 func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 	taskIds := make(chan string)
 	go func() {
+		log.Debug("poller poll start")
 		// re add task ids to smarter
 		defer func() {
 			defer close(taskIds)
+			log.Debug("poller poll stop")
 			p.flush()
 		}()
 		for {
@@ -48,8 +49,7 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 						return
 					}
 				} else {
-					fmt.Printf("get task error %s\n", err)
-					fmt.Printf("Sleeping for %v\n", interval)
+					log.Debugf("sleeping for %v", interval)
 					timeout := time.After(interval)
 					select {
 					case <-quit:
@@ -67,6 +67,9 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 func (p *poller) getTask() (string, error) {
 	defer p.Unlock()
 	p.Lock()
+	// task num limit
+	// limit()
+	// get task from smarter
 	taskId, err := Linda.Schedule()
 	if err != nil {
 		return "", err
@@ -74,10 +77,8 @@ func (p *poller) getTask() (string, error) {
 	if taskId == "" {
 		return "", errors.New("task is empty")
 	}
-	_, ok := p.tasksMap[taskId]
-	if ok {
-		return "", errors.New("task already in poller")
-	}
+	log.Debugf("get task from smarter, taskId: [%s]", taskId)
+	// set poller task map
 	p.tasksMap[taskId] = time.Now()
 	return taskId, nil
 }
@@ -86,6 +87,7 @@ func (p *poller) getTask() (string, error) {
 func (p *poller) flush() error {
 	defer p.Unlock()
 	p.Lock()
+	log.Debugf("flush poller's all tasks return to smarter")
 	for taskId := range p.tasksMap {
 		Linda.ReSetTask(taskId)
 	}

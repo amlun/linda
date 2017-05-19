@@ -16,12 +16,13 @@ func newProcess(id string) (*process, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return &process{
+	p := process{
 		Hostname: hostname,
 		Pid:      os.Getpid(),
 		ID:       id,
-	}, nil
+	}
+	log.Debugf("new process: [%s]", p)
+	return &p, nil
 }
 
 func (p *process) String() string {

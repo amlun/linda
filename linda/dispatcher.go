@@ -18,7 +18,7 @@ func (l *Linda) PushTask(task core.Task) error {
 			return err
 		}
 	}
-	log.Info("ok")
+	log.Info("push task to saver success")
 	return nil
 }
 
@@ -52,7 +52,7 @@ func (l *Linda) PushJob(job core.Job) error {
 		log.Errorf("push job to broker error: [%s]", err)
 		return err
 	}
-	log.Info("ok")
+	log.Info("push job to saver and broker success")
 	return nil
 }
 
@@ -65,7 +65,7 @@ func (l *Linda) GetJob(queue string) (*core.Job, error) {
 		log.Errorf("get job error: [%s]", err)
 		return nil, err
 	}
-	log.WithField("job", job).Info("ok")
+	log.WithField("job", job).Info("get job success")
 	return job, nil
 }
 
