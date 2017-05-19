@@ -7,7 +7,7 @@ import (
 // push a [period] task to saver
 // then push to smarter if it is a scheduled task
 func (l *Linda) PushTask(task core.Task) error {
-	log := Logger.WithField("action", "PushTask").WithField("task", task)
+	log := Logger.WithField("action", "PushTask").WithField("task_id", task.TaskId)
 	if err := l.saver.SaveTask(&task); err != nil {
 		log.Errorf("push task error: [%s]", err)
 		return err
@@ -43,7 +43,7 @@ func (l *Linda) ReSetTask(taskId string) error {
 // first save job in saver
 // then push it to broker
 func (l *Linda) PushJob(job core.Job) error {
-	log := Logger.WithField("action", "PushJob").WithField("job", job)
+	log := Logger.WithField("action", "PushJob").WithField("job_id", job.JobId)
 	if err := l.saver.SaveJob(&job); err != nil {
 		log.Errorf("push job to saver error: [%s]", err)
 		return err

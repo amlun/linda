@@ -49,7 +49,7 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 						return
 					}
 				} else {
-					log.Debugf("sleeping for %v", interval)
+					log.WithField("interval", interval).Debug("sleeping for new task")
 					timeout := time.After(interval)
 					select {
 					case <-quit:
@@ -77,7 +77,7 @@ func (p *poller) getTask() (string, error) {
 	if taskId == "" {
 		return "", errors.New("task is empty")
 	}
-	log.Debugf("get task from smarter, taskId: [%s]", taskId)
+	log.WithField("task_id", taskId).Debug("get task from smarter")
 	// set poller task map
 	p.tasksMap[taskId] = time.Now()
 	return taskId, nil
@@ -87,7 +87,7 @@ func (p *poller) getTask() (string, error) {
 func (p *poller) flush() error {
 	defer p.Unlock()
 	p.Lock()
-	log.Debugf("flush poller's all tasks return to smarter")
+	log.Debug("flush poller's all tasks return to smarter")
 	for taskId := range p.tasksMap {
 		Linda.ReSetTask(taskId)
 	}

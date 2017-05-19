@@ -21,7 +21,7 @@ func newProcess(id string) (*process, error) {
 		Pid:      os.Getpid(),
 		ID:       id,
 	}
-	log.Debugf("new process: [%s]", p)
+	log.WithField("process", p).Debug("new process success")
 	return &p, nil
 }
 
