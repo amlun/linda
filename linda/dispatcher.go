@@ -60,6 +60,7 @@ func (d *dispatcher) PushTask(task core.Task) error {
 }
 
 func (d *dispatcher) Schedule() (string, error) {
+	Logger.Info("schedule task from smarter")
 	return d.smarter.GetTask()
 }
 

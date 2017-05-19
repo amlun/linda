@@ -40,15 +40,7 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 			case <-quit:
 				return
 			default:
-				// get task from smarter
-				fmt.Println("get task from smarter")
-				taskId, err := Linda.Schedule()
-				fmt.Println(taskId, err)
-				if err != nil {
-					fmt.Errorf("schedule error [%s]", err)
-					return
-				}
-				err = p.enqueue(taskId)
+				taskId, err := p.getTask()
 				if err == nil {
 					select {
 					case taskIds <- taskId:
@@ -56,6 +48,7 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 						return
 					}
 				} else {
+					fmt.Printf("get task error %s\n", err)
 					fmt.Printf("Sleeping for %v\n", interval)
 					timeout := time.After(interval)
 					select {
@@ -70,19 +63,23 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan string {
 	return taskIds
 }
 
-// enqueue the task id to poller queue
-func (p *poller) enqueue(taskId string) error {
+// get task from smarter and enqueue task id to poller Map
+func (p *poller) getTask() (string, error) {
 	defer p.Unlock()
 	p.Lock()
+	taskId, err := Linda.Schedule()
+	if err != nil {
+		return "", err
+	}
 	if taskId == "" {
-		return errors.New("task is empty")
+		return "", errors.New("task is empty")
 	}
 	_, ok := p.tasksMap[taskId]
 	if ok {
-		return errors.New("task already in poller")
+		return "", errors.New("task already in poller")
 	}
 	p.tasksMap[taskId] = time.Now()
-	return nil
+	return taskId, nil
 }
 
 // flush all task id, re add to smarter
