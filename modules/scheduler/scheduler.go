@@ -3,27 +3,36 @@ package scheduler
 import (
 	"github.com/amlun/linda/linda"
 	cron "github.com/carlescere/scheduler"
+	"time"
 )
 
+var Linda *linda.Linda
+
 type scheduler struct {
-	linda    *linda.Linda
-	isMaster bool
 }
 
-func New(linda *linda.Linda) *scheduler {
-	return &scheduler{
-		linda: linda,
-	}
+func New() *scheduler {
+	return &scheduler{}
 }
 
-// will support distribute deploy
-// use redis or zookeeper to lock ,one master with multi slave
-func (s *scheduler) Start() {
-	// register()
+func (s *scheduler) Start(linda *linda.Linda) error {
+	// init linda instance
+	Linda = linda
+	// register signals
 	quit := signals()
-	list := s.linda.Periods()
-	for _, period := range list {
-		cron.Every(period).Seconds().Run(s.linda.Schedule(period))
+	poller, err := newPoller()
+	if err != nil {
+		return err
 	}
-	<-quit
+	// poll task ids
+	taskIds := poller.poll(time.Second*2, quit)
+	for taskId := range taskIds {
+		task, err := Linda.GetTask(taskId)
+		if err != nil {
+			return err
+		}
+		cron.Every(task.Period).Seconds().Run(Linda.ScheduleTask(task))
+	}
+	return nil
+
 }

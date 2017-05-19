@@ -34,46 +34,19 @@ func NewLinda(config *Config) *Linda {
 	return l
 }
 
+func (l *Linda) ScheduleTask(task *core.Task) func() {
+	return func() {
+		var job core.Job
+		job.JobId = uuid.NewV4().String()
+		job.TaskId = task.TaskId
+		job.Queue = task.Queue
+		job.Payload = task.Payload
+		l.PushJob(job)
+	}
+}
+
 func (l *Linda) Close() {
 	l.dispatcher.Close()
-}
-
-// schedule jobs with period
-func (l *Linda) Schedule(period int) func() {
-	return func() {
-		tasks := make(chan core.Task)
-		go func() {
-			l.saver.GetPeriodicTask(period, tasks)
-		}()
-		var job core.Job
-		for task := range tasks {
-			l.saver.ScheduleTask(task.TaskId)
-			job.JobId = uuid.NewV4().String()
-			job.TaskId = task.TaskId
-			job.Queue = task.Queue
-			job.Payload = task.Payload
-			l.PushJob(job)
-		}
-		Logger.WithField("action", "Schedule").WithField("period", period).Info("ok")
-	}
-}
-
-// schedule list
-func (l *Linda) Periods() []int {
-	return l.saver.Periods()
-}
-
-// get all task queues and monitor
-func (l *Linda) MonitorQueues() []core.QueueStatus {
-	var queueStatus core.QueueStatus
-	queues := l.saver.Queues()
-	queueStatusList := make([]core.QueueStatus, len(queues))
-	for i, queue := range queues {
-		queueStatus.Queue = queue
-		queueStatus.Length = l.broker.Length(queue)
-		queueStatusList[i] = queueStatus
-	}
-	return queueStatusList
 }
 
 // get task list

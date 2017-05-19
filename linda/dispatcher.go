@@ -42,10 +42,10 @@ func (d *dispatcher) Close() {
 }
 
 // push a [period] task to saver
-// if this is a scheduled task, then push to smarter
+// then push to smarter if it is a scheduled task
 func (d *dispatcher) PushTask(task core.Task) error {
 	log := Logger.WithField("action", "PushTask").WithField("task", task)
-	if err := d.saver.PublishTask(&task); err != nil {
+	if err := d.saver.SaveTask(&task); err != nil {
 		log.Errorf("push task error: [%s]", err)
 		return err
 	}
@@ -59,12 +59,33 @@ func (d *dispatcher) PushTask(task core.Task) error {
 	return nil
 }
 
-// push a job to broker and saver
+func (d *dispatcher) Schedule() (string, error) {
+	return d.smarter.GetTask()
+}
+
+func (d *dispatcher) GetTask(taskId string) (*core.Task, error) {
+	task, err := d.saver.GetTask(taskId)
+	if err != nil {
+		Logger.Errorf("get task from saver error: [%s]", err)
+		return nil, err
+	}
+	return task, nil
+
+}
+
+func (d *dispatcher) ReSetTask(taskId string) error {
+	if err := d.smarter.PushTask(taskId); err != nil {
+		Logger.Errorf("push task to smarter error: [%s]", err)
+		return err
+	}
+	return nil
+}
+
 // first save job in saver
 // then push it to broker
 func (d *dispatcher) PushJob(job core.Job) error {
 	log := Logger.WithField("action", "PushJob").WithField("job", job)
-	if err := d.saver.PublishJob(&job); err != nil {
+	if err := d.saver.SaveJob(&job); err != nil {
 		log.Errorf("push job to saver error: [%s]", err)
 		return err
 	}

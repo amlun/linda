@@ -45,63 +45,29 @@ func (s *Saver) Close() error {
 	return nil
 }
 
-func (s *Saver) PublishTask(t *core.Task) error {
+func (s *Saver) SaveTask(t *core.Task) error {
 	if err := s.session.Query(`INSERT INTO tasks (task_id, args, create_time, period, func, queue) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
 		t.TaskId, t.Args, time.Now(), t.Period, t.Func, t.Queue).Exec(); err != nil {
 		return err
 	}
-	if t.Period > 0 {
-		s.session.Query(`UPDATE periods SET count = count + 1 WHERE period = ?`, t.Period).Exec()
-	}
 	return nil
 }
 
-func (s *Saver) PublishJob(t *core.Job) error {
+func (s *Saver) SaveJob(t *core.Job) error {
 	if err := s.session.Query(`INSERT INTO jobs (job_id, args, func, run_time, status, task_id, queue) VALUES (?, ?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
 		t.JobId, t.Args, t.Func, t.RunTime, t.Status, t.TaskId, t.Queue).Exec(); err != nil {
 		return err
 	}
-	s.session.Query(`UPDATE queues SET count = count + 1 WHERE queue = ?`, t.Queue).Exec()
 	return nil
 }
 
-func (s *Saver) Periods() []int {
-	var periodList []int
-	var period int
-	iter := s.session.Query(`SELECT period FROM periods`).Iter()
-	for iter.Scan(&period) {
-		periodList = append(periodList, period)
-	}
-	iter.Close()
-	return periodList
-}
-
-func (s *Saver) Queues() []string {
-	var queueList []string
-	var queue string
-	iter := s.session.Query(`SELECT queue FROM queues`).Iter()
-	for iter.Scan(&queue) {
-		queueList = append(queueList, queue)
-	}
-	iter.Close()
-	return queueList
-}
-
-func (s *Saver) GetPeriodicTask(period int, tasks chan core.Task) {
+func (s *Saver) GetTask(taskId string) (*core.Task, error) {
 	var task core.Task
-	iter := s.session.Query(`SELECT task_id, args, period, func, queue FROM tasks WHERE period = ?`, period).Iter()
-	for iter.Scan(&task.TaskId, &task.Args, &task.Period, &task.Func, &task.Queue) {
-		tasks <- task
+	if err := s.session.Query(`SELECT task_id, args, period, func, queue FROM tasks WHERE task_id = ?`,
+		taskId).Scan(&task.TaskId, &task.Args, &task.Period, &task.Func, &task.Queue); err != nil {
+		return nil, err
 	}
-	close(tasks)
-}
-
-func (s *Saver) ScheduleTask(id string) error {
-	if err := s.session.Query(`INSERT INTO schedules (task_id, schedule_time) VALUES (?, ?)`,
-		id, time.Now()).Exec(); err != nil {
-		return err
-	}
-	return nil
+	return &task, nil
 }
 
 func (s *Saver) TaskList(taskList *core.TaskList) error {

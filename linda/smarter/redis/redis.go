@@ -51,6 +51,12 @@ func (s *Smarter) GetTask() (taskId string, err error) {
 	con := s.pool.Get()
 	defer con.Close()
 	taskId, err = redis.String(con.Do("SPOP", "linda:tasks"))
+	if redis.ErrNil == err {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
 	return taskId, err
 }
 

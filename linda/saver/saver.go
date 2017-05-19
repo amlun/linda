@@ -9,12 +9,9 @@ import (
 type Saver interface {
 	Connect(url *neturl.URL) error
 	Close() error
-	PublishTask(t *core.Task) error
-	PublishJob(t *core.Job) error
-	Periods() []int
-	Queues() []string
-	GetPeriodicTask(period int, tasks chan core.Task)
-	ScheduleTask(id string) error
+	SaveTask(t *core.Task) error
+	SaveJob(t *core.Job) error
+	GetTask(taskId string) (*core.Task, error)
 	TaskList(taskList *core.TaskList) error
 }
 

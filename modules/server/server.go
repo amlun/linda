@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func Start(linda *linda.Linda) {
+func Start(linda *linda.Linda) error {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(Recovery())
@@ -22,7 +22,11 @@ func Start(linda *linda.Linda) {
 	r.GET("/api/job", api.getJob())
 	r.POST("/api/task", api.pushTask())
 
-	r.Run(":8081")
+	err := r.Run(":8081")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Recovery() gin.HandlerFunc {
