@@ -72,17 +72,6 @@ func (a *api) getJob() gin.HandlerFunc {
 	}
 }
 
-func (a *api) queuesStatus() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		queueStatus := a.linda.MonitorQueues()
-		c.JSON(http.StatusOK, Result{
-			Code: 200,
-			Msg:  "ok",
-			Data: queueStatus,
-		})
-	}
-}
-
 func (a *api) tasks() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var taskList core.TaskList

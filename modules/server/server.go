@@ -18,7 +18,6 @@ func Start(linda *linda.Linda) error {
 
 	r.GET("/api/ping", api.ping())
 	r.GET("/api/tasks", api.tasks())
-	r.GET("/api/queues", api.queuesStatus())
 	r.GET("/api/job", api.getJob())
 	r.POST("/api/task", api.pushTask())
 

@@ -1,13 +1,19 @@
 package linda
 
 import (
-	"github.com/amlun/linda/linda/core"
-	"github.com/twinj/uuid"
+	"github.com/amlun/linda/linda/broker"
+	_ "github.com/amlun/linda/linda/broker/redis"
+	"github.com/amlun/linda/linda/saver"
+	_ "github.com/amlun/linda/linda/saver/cassandra"
+	"github.com/amlun/linda/linda/smarter"
+	_ "github.com/amlun/linda/linda/smarter/redis"
 )
 
 type Linda struct {
-	config *Config
-	dispatcher
+	config  *Config
+	broker  broker.Broker
+	saver   saver.Saver
+	smarter smarter.Smarter
 }
 
 func NewLinda(config *Config) *Linda {
@@ -22,34 +28,32 @@ func NewLinda(config *Config) *Linda {
 	}
 	l := &Linda{
 		config: config,
-		dispatcher: dispatcher{
-			brokerURL:  config.BrokerURL,
-			saverURL:   config.SaverURL,
-			smarterURL: config.SmarterURL,
-		},
 	}
-	if err := l.dispatcher.Init(); err != nil {
+	if err := l.init(); err != nil {
 		panic(err)
 	}
 	return l
 }
 
-func (l *Linda) ScheduleTask(task *core.Task) func() {
-	return func() {
-		var job core.Job
-		job.JobId = uuid.NewV4().String()
-		job.TaskId = task.TaskId
-		job.Queue = task.Queue
-		job.Payload = task.Payload
-		l.PushJob(job)
+func (l *Linda) init() error {
+	var err error
+	if l.broker, err = broker.NewBroker(l.config.BrokerURL); err != nil {
+		Logger.Error(err)
+		return err
 	}
+	if l.saver, err = saver.NewSaver(l.config.SaverURL); err != nil {
+		Logger.Error(err)
+		return err
+	}
+	if l.smarter, err = smarter.NewSmarter(l.config.SmarterURL); err != nil {
+		Logger.Error(err)
+		return err
+	}
+	return nil
 }
 
 func (l *Linda) Close() {
-	l.dispatcher.Close()
-}
-
-// get task list
-func (l *Linda) TaskList(taskList *core.TaskList) error {
-	return l.saver.TaskList(taskList)
+	l.broker.Close()
+	l.saver.Close()
+	l.smarter.Close()
 }
