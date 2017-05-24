@@ -13,7 +13,6 @@ type Settings struct {
 	Timeout       int64
 	Interval      intervalFlag
 	Concurrency   int
-	Ack           bool
 }
 
 type intervalFlag time.Duration

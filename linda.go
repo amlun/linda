@@ -69,7 +69,7 @@ func Run() error {
 		return err
 	}
 	quit := signals()
-	jobs := poller.poll(settings.Queue, settings.Ack, settings.Timeout, time.Duration(settings.Interval), quit)
+	jobs := poller.poll(settings.Queue, settings.Timeout, time.Duration(settings.Interval), quit)
 	var monitor sync.WaitGroup
 	logrus.Debugf("start %d workers to do the job", settings.Concurrency)
 	for i := 0; i < settings.Concurrency; i++ {

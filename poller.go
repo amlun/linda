@@ -20,7 +20,7 @@ func newPoller() (*poller, error) {
 	}, nil
 }
 
-func (p *poller) poll(queue string, ack bool, life int64, interval time.Duration, quit <-chan bool) <-chan *Job {
+func (p *poller) poll(queue string, life int64, interval time.Duration, quit <-chan bool) <-chan *Job {
 	logrus.Debug("poller poll start...")
 	jobs := make(chan *Job)
 	go func() {
@@ -43,7 +43,7 @@ func (p *poller) poll(queue string, ack bool, life int64, interval time.Duration
 			case <-quit:
 				return
 			default:
-				job, err := brokerConn.Pop(queue, ack, life)
+				job, err := brokerConn.Pop(queue, life)
 				if err != nil {
 					logrus.Error(err)
 					return

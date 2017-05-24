@@ -6,6 +6,8 @@ Linda Broker provides a unified API across different broker (queue) services.
 
 Brokers allow you to defer the processing of a time consuming task.
 
+Use ReleaseWithDelay func, you can implement a cron job service.
+
 Inspiration comes from [beanstalkd](https://github.com/kr/beanstalkd) and [goworker](https://github.com/benmanns/goworker) 
 
 ## Installation
@@ -58,9 +60,10 @@ type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
 	MigrateExpiredJobs(queue string)
-	Pop(queue string, ack bool, timeout int64) (*Job, error)
-	DeleteReserved(queue string, job *Job) error
-	DeleteAndRelease(queue string, job *Job, delay int64) error
+	Pop(queue string, timeout int64) (*Job, error)
+	Delete(queue string, job *Job) error
+	Release(queue string, job *Job) error
+	ReleaseWithDelay(queue string, job *Job, delay int64) error
 	Push(job *Job, queue string) error
 	Later(delay int64, job *Job, queue string) error
 }
@@ -118,7 +121,6 @@ func init() {
 		Timeout:       60,
 		IntervalFloat: 5.0,
 		Concurrency:   1,
-		Ack:           true,
 	}
 	linda.SetSettings(settings)
 	linda.RegisterWorkers("DispatcherSeed", DispatcherSeed)
@@ -134,8 +136,8 @@ func DispatcherSeed(job *linda.Job) error {
 	broker := linda.GetBroker()
 	// get seed info
 	// do seed job
-	// delete reserved job and release
-	broker.DeleteAndRelease("scheduler", job, 60)
+	// release job with delay (like a cron job)
+	broker.ReleaseWithDelay("scheduler", job, 60)
 	return nil
 }
 ```
@@ -152,7 +154,23 @@ func DispatcherSeed(job *linda.Job) error {
  
 ## Design
 
+### System Design
+
 ![system-design](https://rawgit.com/amlun/linda/master/images/linda.png)
+
+### Job State
+
+   later                       release with delay
+  ----------------> [DELAYED] <------------.
+                        |                   |
+                migrate | (time passes)     |
+                        |                   |
+   push                 v     reserve       |       delete
+  -----------------> [READY] ---------> [RESERVED] --------> *poof*
+                        ^                |
+                         \    release    |
+                          `--------------'
+                           migrate (time out)
  
 ## Thanks
 

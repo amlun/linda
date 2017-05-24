@@ -74,16 +74,11 @@ func (r *RedisBroker) migrateExpiredJobs(from string, to string) {
 		logrus.Error(err)
 	}
 }
-func (r *RedisBroker) Pop(queue string, ack bool, timeout int64) (job *Job, err error) {
+func (r *RedisBroker) Pop(queue string, timeout int64) (job *Job, err error) {
 	conn := r.pool.Get()
 	defer conn.Close()
 	// reserve next job
-	var reply []byte
-	if ack {
-		reply, err = redis.Bytes(conn.Do("EVAL", PopJobScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
-	} else {
-		reply, err = redis.Bytes(conn.Do("LPOP", queue))
-	}
+	reply, err := redis.Bytes(conn.Do("EVAL", PopJobScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
 	if err == redis.ErrNil {
 		return nil, nil
 	}
@@ -99,7 +94,7 @@ func (r *RedisBroker) Pop(queue string, ack bool, timeout int64) (job *Job, err 
 	return job, nil
 }
 
-func (r *RedisBroker) DeleteReserved(queue string, job *Job) error {
+func (r *RedisBroker) Delete(queue string, job *Job) error {
 	conn := r.pool.Get()
 	defer conn.Close()
 	bytes, err := json.Marshal(job)
@@ -116,7 +111,24 @@ func (r *RedisBroker) DeleteReserved(queue string, job *Job) error {
 	return nil
 }
 
-func (r *RedisBroker) DeleteAndRelease(queue string, job *Job, delay int64) error {
+func (r *RedisBroker) Release(queue string, job *Job) error {
+	conn := r.pool.Get()
+	defer conn.Close()
+	bytes, err := json.Marshal(job)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	_, err = conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(0))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	logrus.Infof("delete and release job {%s}", job)
+	return nil
+}
+
+func (r *RedisBroker) ReleaseWithDelay(queue string, job *Job, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
 	bytes, err := json.Marshal(job)
