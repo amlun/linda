@@ -1,6 +1,8 @@
 # Linda
 
-Linda provides a unified API across different broker (queue) services.
+Linda is a background manager to poll jobs from broker and dispatch them to multi workers.
+
+Linda Broker provides a unified API across different broker (queue) services.
 
 Brokers allow you to defer the processing of a time consuming task.
 
@@ -27,6 +29,7 @@ to install the dependencies
 
 * poller
 > poll job from the broker and send to local job channels
+
 > poller also migrate the expire jobs
 
 * worker
@@ -43,7 +46,30 @@ func(job *Job) error
 linda.Register("MyClass", myFunc)
 ```
 
+### Broker Interface
+```go
+package linda
+
+import (
+	neturl "net/url"
+)
+
+type Broker interface {
+	Connect(url *neturl.URL) error
+	Close() error
+	MigrateExpiredJobs(queue string)
+	Pop(queue string, ack bool, timeout int64) (*Job, error)
+	DeleteReserved(queue string, job *Job) error
+	DeleteAndRelease(queue string, job *Job, delay int64) error
+	Push(job *Job, queue string) error
+	Later(delay int64, job *Job, queue string) error
+}
+```
+
 ### Examples
+
+
+push a job to queue
 
 ```go
 package main
@@ -53,23 +79,12 @@ import (
 	"github.com/amlun/linda"
 )
 
-func init() {
-	settings := linda.Settings{
-		Queue:         "scheduler",
-		Connection:    "redis://localhost:6379/",
-		Timeout:       60,
-		IntervalFloat: 5.0,
-		Concurrency:   1,
-		Ack:           true,
-	}
-	linda.SetSettings(settings)
-}
 func main() {
-	if err := linda.Init(); err != nil {
-		fmt.Println("Error:", err)
+	broker, err := linda.NewBroker("redis://localhost:6379/")
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	broker := linda.GetBroker()
 	queue := "scheduler"
 	job := &linda.Job{
 		Queue: queue,
@@ -84,8 +99,10 @@ func main() {
 		return
 	}
 }
+
 ```
 
+Worker run to consume the job
 ```go
 package main
 
