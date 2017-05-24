@@ -1,26 +1,22 @@
 # Linda
 
-Linda is a simple dispatcher and scheduler system.
+Linda provides a unified API across different broker (queue) services.
 
-Linda has several tools/apis to manage tasks and jobs.
+Brokers allow you to defer the processing of a time consuming task.
 
-It allows you to save tasks to saver[DB] and push jobs to broker[MQ].
-
-## Design
-
-[Design](design)
+Inspiration comes from [beanstalkd](https://github.com/kr/beanstalkd) and [goworker](https://github.com/benmanns/goworker) 
 
 ## Installation
 
-To install Linda, use 
-
-`go get github.com/amlun/linda`
-
-to install the package, and then use [glide](https://glide.sh/)
-
-`glide install`
-
-to install the dependency packages
+To install Linda, use
+```sh
+go get github.com/amlun/linda
+```
+to get the main package, and then use [glide](https://glide.sh/)
+```sh
+glide install
+```
+to install the dependencies
 
 ## Getting Started
 
@@ -29,46 +25,64 @@ to install the dependency packages
 * Broker
 > message transport [MQ]
 
-* Smarter
-> save scheduled tasks and schedule them
+* poller
+> poll job from the broker and send to local job channels
+> poller also migrate the expire jobs
 
-* Saver
-> backend to store all things
+* worker
+> worker is the main process to work the job
 
-* Queues
-> receive job and send to exchanges
+### Worker Type
 
-* Periods
-> period of the task
+```
+func(job *Job) error
+```
 
-* Task
-> template of job
+### Register Worker
+```
+linda.Register("MyClass", myFunc)
+```
 
-* Job
-> job is a callable class/function with args 
-
-
-### Simple Usage
-
-Edit the apps/server.go, apps/scheduler.go, modify the config with your own urlString
+### Examples
 
 ```go
 package main
 
 import (
-	"github.com/amlun/linda/linda"
-	"github.com/amlun/linda/modules/server"
+	"fmt"
+	"github.com/amlun/linda"
 )
 
-func main() {
-	var config = linda.Config{
-		BrokerURL: "redis://127.0.0.1:6379",
-		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
-		SmarterURL: "redis://127.0.0.1:6379",
+func init() {
+	settings := linda.Settings{
+		Queue:         "scheduler",
+		Connection:    "redis://localhost:6379/",
+		Timeout:       60,
+		IntervalFloat: 5.0,
+		Concurrency:   1,
+		Ack:           true,
 	}
-	l := linda.NewLinda(&config)
-	defer l.Close()
-	server.Start(l)
+	linda.SetSettings(settings)
+}
+func main() {
+	if err := linda.Init(); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	broker := linda.GetBroker()
+	queue := "scheduler"
+	job := &linda.Job{
+		Queue: queue,
+		Payload: linda.Payload{
+			Class: "DispatcherSeed",
+			Args:  []interface{}{"seed_url_md5"},
+		},
+	}
+
+	if err := broker.Push(job, queue); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
 }
 ```
 
@@ -76,141 +90,55 @@ func main() {
 package main
 
 import (
-	"github.com/amlun/linda/linda"
-	"github.com/amlun/linda/modules/scheduler"
+	"fmt"
+	"github.com/amlun/linda"
 )
 
+func init() {
+	settings := linda.Settings{
+		Queue:         "scheduler",
+		Connection:      "redis://localhost:6379/",
+		Timeout:       60,
+		IntervalFloat: 5.0,
+		Concurrency:   1,
+		Ack:           true,
+	}
+	linda.SetSettings(settings)
+	linda.RegisterWorkers("DispatcherSeed", DispatcherSeed)
+}
+
 func main() {
-	var config = linda.Config{
-    		BrokerURL: "redis://127.0.0.1:6379",
-    		SaverURL:  "cassandra://cassandra:cassandra@127.0.0.1:9042/linda",
-    		SmarterURL: "redis://127.0.0.1:6379",
-    	}
-	l := linda.NewLinda(&config)
-	defer l.Close()
-	s := scheduler.New()
-	s.Start(l)
+	if err := linda.Run(); err != nil {
+		fmt.Println("Error:", err)
+	}
 }
 
-
-```
-
-And then use
-
-`go run apps/server.go`
-
-to start a http server and serve the apis.
-
-Use
-
-`go run apps/scheduler.go`
-
-to start scheduler to schedule the periodic tasks.
-
-
-### API Doc
-
- * GET /api/ping - Check the server if it is alive.
- * GET /api/tasks - List all tasks.
- * GET /api/job - Get a job from queue, now it only implements a simple way to fetch a job.
- * POST /api/task - Post a task.
- 
-### API Usage 
-
-#### Post A Task
-HTTP method: `POST`
-
-Host/port: `http://localhost:8081/api/task`
-
-Request Parameters: `Func=test&Args=a&Args=b&Args=c&Period=100`
-
-#### Get A Job
-HTTP method: `GET`
-
-Host/port: `http://localhost:8081/api/job`
-
-Request Parameters: `queue=test`
-
-### Job in Queue
-
-```json
-{
-    "job_id": "9964015c-a96c-4e48-aad6-985ab8dc1888",
-    "run_time": "2017-05-17T14:19:50.355512848+08:00",
-    "delay": 0,
-    "status": 0,
-    "task_id": "57354766-93f6-43eb-8b86-a4bc2b547cf8",
-    "period": 100,
-    "func": "test",
-    "args": [
-        "a",
-        "b",
-        "c"
-    ]
+func DispatcherSeed(job *linda.Job) error {
+	broker := linda.GetBroker()
+	// get seed info
+	// do seed job
+	// delete reserved job and release
+	broker.DeleteAndRelease("scheduler", job, 60)
+	return nil
 }
-```
-The only useful field is `args`, because `func` is same with `queue` name.
-
-Clients fetch jobs from `queue`, and then handle it with `args`.
-
-And then update the job status. @TODO
-
-Job_Status:
-
-```
-	PENDING = iota
-	STARTED 
-	RETRY   
-	SUCCESS 
-	FAILURE 
 ```
 
 ## Features
 
-### Linda Dispatcher
-
- - [x] Simple dispatcher with func as the queue
- - [ ] Manage a queue pool and support priority queue
- 
-### Linda Scheduler
-
- - [x] Distribute scheduler workers
-
 ### Broker List
 
  - [x] Redis
+ - [ ] beanstalkd
  - [ ] NSQ
  - [ ] Kafka
  - [ ] RabbitMQ
-
-### Saver List
-
- - [x] Cassandra
- - [ ] Redis
- - [ ] Mysql
  
-### Smarter List
+## Design
 
- - [x] Redis
- - [ ] Zookeeper
- - [ ] etcd
- 
-### Web UI
-
- - [ ] Task List & Manage
- - [ ] Job List & Manage
- - [ ] Queue List & Manage & Monitor
- - [ ] Periods Manage / Cron Jobs
- - [ ] Data Statistics
- 
-### Clients
- - [x] HTTP API
- - [ ] Go
- - [ ] Python
+![system-design](https://rawgit.com/amlun/linda/master/images/linda.png)
  
 ## Thanks
 
 * [redigo](https://github.com/garyburd/redigo)
-* [gocql](https://github.com/gocql/gocql)
-* [scheduler](https://github.com/carlescere/scheduler)
-* [Gin](https://github.com/gin-gonic/gin)
+* [goworker](https://github.com/benmanns/goworker)
+* [laravel/queue](https://github.com/laravel/framework)

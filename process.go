@@ -1,7 +1,8 @@
-package scheduler
+package linda
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 )
 
@@ -14,15 +15,15 @@ type process struct {
 func newProcess(id string) (*process, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
-	p := process{
+
+	return &process{
 		Hostname: hostname,
 		Pid:      os.Getpid(),
 		ID:       id,
-	}
-	log.WithField("process", p).Debug("new process success")
-	return &p, nil
+	}, nil
 }
 
 func (p *process) String() string {

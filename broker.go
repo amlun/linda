@@ -1,30 +1,28 @@
-package broker
+package linda
 
 import (
 	"fmt"
-	"github.com/amlun/linda/linda/core"
 	neturl "net/url"
 )
 
 type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
-	PushJob(job *core.Job) error
-	//PushTask(task *core.Task) error
-	GetJob(queue string) (*core.Job, error)
-	Length(queue string) int
+	MigrateExpiredJobs(queue string)
+	Pop(queue string, ack bool, timeout int64) (*Job, error)
+	DeleteReserved(queue string, job *Job) error
+	DeleteAndRelease(queue string, job *Job, delay int64) error
+	Push(job *Job, queue string) error
+	Later(delay int64, job *Job, queue string) error
 }
 
-// registered brokers
 var brokerRegistery = make(map[string]Broker)
 
-// Register broker with its scheme
-func Register(scheme string, b Broker) {
-	brokerRegistery[scheme] = b
+func RegisterBroker(scheme string, broker Broker) {
+	brokerRegistery[scheme] = broker
 }
 
 func NewBroker(urlString string) (Broker, error) {
-	// get scheme from uri
 	url, err := neturl.Parse(urlString)
 	if err != nil {
 		return nil, err
@@ -39,4 +37,8 @@ func NewBroker(urlString string) (Broker, error) {
 	}
 
 	return nil, fmt.Errorf("Unknow broker scheme [%s]", scheme)
+}
+
+func init() {
+	RegisterBroker("redis", &RedisBroker{})
 }
