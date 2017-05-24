@@ -159,7 +159,7 @@ func DispatcherSeed(job *linda.Job) error {
 ![system-design](https://rawgit.com/amlun/linda/master/images/linda.png)
 
 ### Job State
-
+```
    later                       release with delay
   ----------------> [DELAYED] <------------.
                         |                   |
@@ -172,6 +172,7 @@ func DispatcherSeed(job *linda.Job) error {
                           `--------------'
                            migrate (time out)
  
+```
 ## Thanks
 
 * [redigo](https://github.com/garyburd/redigo)
