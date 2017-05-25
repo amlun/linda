@@ -50,17 +50,11 @@ func(job *Job) error
 
 ### Register Worker
 ```
-linda.Register("MyClass", myFunc)
+linda.RegisterWorkers("MyClass", myFunc)
 ```
 
 ### Broker Interface
-```go
-package linda
-
-import (
-	neturl "net/url"
-)
-
+```
 type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
@@ -75,7 +69,6 @@ type Broker interface {
 ```
 
 ### Examples
-
 
 use redis-cli push jobs to queue
 
