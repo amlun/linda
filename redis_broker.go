@@ -9,11 +9,13 @@ import (
 	"time"
 )
 
+// redis broker
 type RedisBroker struct {
 	redisURL *neturl.URL
 	pool     *redis.Pool
 }
 
+// connect broker backend with url
 func (r *RedisBroker) Connect(url *neturl.URL) error {
 	var host = url.Host
 	var password string
@@ -56,10 +58,12 @@ func (r *RedisBroker) Connect(url *neturl.URL) error {
 	return nil
 }
 
+// close the broker
 func (r *RedisBroker) Close() error {
 	return r.pool.Close()
 }
 
+// migrate expired jobs to ready queue
 func (r *RedisBroker) MigrateExpiredJobs(queue string) {
 	r.migrateExpiredJobs(fmt.Sprintf("%s:reserved", queue), queue)
 	r.migrateExpiredJobs(fmt.Sprintf("%s:delayed", queue), queue)
@@ -74,6 +78,10 @@ func (r *RedisBroker) migrateExpiredJobs(from string, to string) {
 		logrus.Error(err)
 	}
 }
+
+// pop out a job to reserved state with its life time
+// if the reserved job is out of time(second)
+// poller will kick it back in to ready queue
 func (r *RedisBroker) Pop(queue string, timeout int64) (job *Job, err error) {
 	conn := r.pool.Get()
 	defer conn.Close()
@@ -94,6 +102,8 @@ func (r *RedisBroker) Pop(queue string, timeout int64) (job *Job, err error) {
 	return job, nil
 }
 
+// delete the reserved job
+// most of the time it means the job has been done successfully
 func (r *RedisBroker) Delete(queue string, job *Job) error {
 	conn := r.pool.Get()
 	defer conn.Close()
@@ -111,6 +121,8 @@ func (r *RedisBroker) Delete(queue string, job *Job) error {
 	return nil
 }
 
+// release the reserved job
+// mostly it means the job failed to be done or time out
 func (r *RedisBroker) Release(queue string, job *Job) error {
 	conn := r.pool.Get()
 	defer conn.Close()
@@ -128,6 +140,8 @@ func (r *RedisBroker) Release(queue string, job *Job) error {
 	return nil
 }
 
+// release the reserved job and push it back in to ready queue withe a delay(second) time
+// this function maybe used for cron jobs
 func (r *RedisBroker) ReleaseWithDelay(queue string, job *Job, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
@@ -145,6 +159,7 @@ func (r *RedisBroker) ReleaseWithDelay(queue string, job *Job, delay int64) erro
 	return nil
 }
 
+// push a job in to the queue
 func (r *RedisBroker) Push(job *Job, queue string) error {
 	conn := r.pool.Get()
 	defer conn.Close()
@@ -162,6 +177,8 @@ func (r *RedisBroker) Push(job *Job, queue string) error {
 	return nil
 }
 
+// push a job in to the queue with a delay(second) time
+// the job should be handled in the future time
 func (r *RedisBroker) Later(delay int64, job *Job, queue string) error {
 	conn := r.pool.Get()
 	defer conn.Close()

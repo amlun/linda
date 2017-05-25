@@ -5,6 +5,8 @@ import (
 	neturl "net/url"
 )
 
+// broker is message transport[MQ]
+// it provides a unified API, support multi drivers
 type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
@@ -17,26 +19,33 @@ type Broker interface {
 	Later(delay int64, job *Job, queue string) error
 }
 
-var brokerRegistery = make(map[string]Broker)
+var brokerMaps = make(map[string]Broker)
 
+// Register broker with scheme name
+// You can use your own broker driver
 func RegisterBroker(scheme string, broker Broker) {
-	brokerRegistery[scheme] = broker
+	if broker == nil {
+		panic("Register broker is nil")
+	}
+	brokerMaps[scheme] = broker
 }
 
+// get an instance of broker with url string
+// if there is no matched scheme, return error
+// now broker only support redis
 func NewBroker(urlString string) (Broker, error) {
 	url, err := neturl.Parse(urlString)
 	if err != nil {
 		return nil, err
 	}
 	scheme := url.Scheme
-	if b, ok := brokerRegistery[scheme]; ok {
+	if b, ok := brokerMaps[scheme]; ok {
 		err := b.Connect(url)
 		if err != nil {
 			return nil, err
 		}
 		return b, nil
 	}
-
 	return nil, fmt.Errorf("Unknow broker scheme [%s]", scheme)
 }
 

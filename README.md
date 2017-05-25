@@ -1,5 +1,8 @@
 # Linda
 
+[![Build Status](https://travis-ci.org/amlun/linda.png?branch=master)](https://travis-ci.org/amlun/linda)
+[![GoDoc](https://godoc.org/github.com/amlun/linda?status.svg)](https://godoc.org/github.com/amlun/linda)
+
 Linda is a background manager to poll jobs from broker and dispatch them to multi workers.
 
 Linda Broker provides a unified API across different broker (queue) services.

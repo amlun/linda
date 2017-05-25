@@ -2,11 +2,14 @@ package linda
 
 import "fmt"
 
+// Job is the basic unit of this package
+// it contains queue name and payload
 type Job struct {
 	Queue   string `json:"queue"`
 	Payload Payload
 }
 
+// job to string
 func (j *Job) String() string {
 	return fmt.Sprintf("In queue: %s | handle: %s(%v)", j.Queue, j.Payload.Class, j.Payload.Args)
 }
