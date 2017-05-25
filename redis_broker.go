@@ -92,11 +92,17 @@ func (r *RedisBroker) migrateExpiredJobs(from string, to string) {
 // Pop out a job to reserved state with its life time
 // if the reserved job is out of time(second)
 // poller will kick it back in to ready queue
+// if time out is 0, it means the job will be delete directly
 func (r *RedisBroker) Pop(queue string, timeout int64) (job *Job, err error) {
 	conn := r.pool.Get()
 	defer conn.Close()
+	var reply []byte
 	// reserve next job
-	reply, err := redis.Bytes(conn.Do("EVAL", PopJobScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
+	if timeout > 0 {
+		reply, err = redis.Bytes(conn.Do("EVAL", PopJobScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
+	} else {
+		reply, err = redis.Bytes(conn.Do("LPOP", queue))
+	}
 	if err == redis.ErrNil {
 		return nil, nil
 	}

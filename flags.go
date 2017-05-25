@@ -31,7 +31,7 @@ func init() {
 	flag.StringVar(&settings.Queue, "queue", "default", "queue name")
 	flag.Float64Var(&settings.IntervalFloat, "interval", 1.0, "sleep interval(seconds) when no jobs are found")
 	flag.IntVar(&settings.Concurrency, "concurrency", 2, "the maximum number of concurrently workers")
-	flag.Int64Var(&settings.Timeout, "timeout", 60, "the reserved job life time(seconds)")
+	flag.Int64Var(&settings.Timeout, "timeout", 0, "the reserved job life time(seconds), 0 means job will be deleted directly")
 	flag.StringVar(&settings.Connection, "connection", "redis://localhost:6379/", "the url of the broker connection")
 }
 
@@ -47,10 +47,6 @@ func flags() error {
 
 	if settings.IntervalFloat < 1 {
 		return errors.New("interval must gte 1, poll too quickly")
-	}
-
-	if settings.Timeout < 10 {
-		return errors.New("timeout must gte 10")
 	}
 
 	return nil
