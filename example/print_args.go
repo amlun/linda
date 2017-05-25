@@ -17,6 +17,5 @@ func main() {
 
 func PrintArgs(job *linda.Job) error {
 	fmt.Println(job.Payload.Args)
-	linda.GetBroker().Delete(job.Queue, job)
 	return nil
 }
