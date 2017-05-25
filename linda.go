@@ -22,7 +22,7 @@ func SetSettings(sets Settings) {
 	settings = sets
 }
 
-// init linda with settings
+// Init linda with settings
 // get instance of broker
 func Init() error {
 	initMutex.Lock()
@@ -43,8 +43,7 @@ func Init() error {
 	return nil
 }
 
-// close linda
-// close broker
+// Close linda with close broker
 func Close() {
 	initMutex.Lock()
 	defer initMutex.Unlock()
@@ -55,7 +54,7 @@ func Close() {
 	}
 }
 
-// get the initialized broker of linda
+// GetBroker will return the initialized broker of linda
 func GetBroker() Broker {
 	if initialized {
 		return brokerConn
@@ -63,8 +62,7 @@ func GetBroker() Broker {
 	return nil
 }
 
-// run linda
-// it also call init function self
+// Run linda, it also call init function self
 func Run() error {
 	err := Init()
 	if err != nil {

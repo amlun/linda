@@ -5,7 +5,7 @@ import (
 	neturl "net/url"
 )
 
-// broker is message transport[MQ]
+// Broker is message transport[MQ]
 // it provides a unified API, support multi drivers
 type Broker interface {
 	Connect(url *neturl.URL) error
@@ -21,7 +21,7 @@ type Broker interface {
 
 var brokerMaps = make(map[string]Broker)
 
-// Register broker with scheme name
+// RegisterBroker is used to register brokers with scheme name
 // You can use your own broker driver
 func RegisterBroker(scheme string, broker Broker) {
 	if broker == nil {
@@ -30,7 +30,7 @@ func RegisterBroker(scheme string, broker Broker) {
 	brokerMaps[scheme] = broker
 }
 
-// get an instance of broker with url string
+// NewBroker will get an instance of broker with url string
 // if there is no matched scheme, return error
 // now broker only support redis
 func NewBroker(urlString string) (Broker, error) {
