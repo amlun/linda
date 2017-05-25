@@ -77,40 +77,21 @@ type Broker interface {
 ### Examples
 
 
-push a job to queue
+use redis-cli push jobs to queue
 
-```go
-package main
-
-import (
-	"fmt"
-	"github.com/amlun/linda"
-)
-
-func main() {
-	broker, err := linda.NewBroker("redis://localhost:6379/")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	queue := "scheduler"
-	job := &linda.Job{
-		Queue: queue,
-		Payload: linda.Payload{
-			Class: "DispatcherSeed",
-			Args:  []interface{}{"seed_url_md5"},
-		},
-	}
-
-	if err := broker.Push(job, queue); err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-}
-
+```
+RPUSH print "{\"queue\":\"print\",\"Payload\":{\"class\":\"printArgs\",\"args\":[\"a\",\"b\",\"c\"]}}"
+RPUSH print "{\"queue\":\"print\",\"Payload\":{\"class\":\"printArgs\",\"args\":[\"A\",\"B\",\"C\"]}}"
+RPUSH print "{\"queue\":\"print\",\"Payload\":{\"class\":\"printArgs\",\"args\":[1,2,3,4,5,6,7]}}"
 ```
 
 Worker run to consume the job
+```sh
+go run example/print_args -queue=print -connection=redis://localhost:6379/
+```
+
+example/print_args.go
+
 ```go
 package main
 
@@ -120,15 +101,7 @@ import (
 )
 
 func init() {
-	settings := linda.Settings{
-		Queue:         "scheduler",
-		Connection:      "redis://localhost:6379/",
-		Timeout:       60,
-		IntervalFloat: 5.0,
-		Concurrency:   1,
-	}
-	linda.SetSettings(settings)
-	linda.RegisterWorkers("DispatcherSeed", DispatcherSeed)
+	linda.RegisterWorkers("PrintArgs", PrintArgs)
 }
 
 func main() {
@@ -137,12 +110,9 @@ func main() {
 	}
 }
 
-func DispatcherSeed(job *linda.Job) error {
-	broker := linda.GetBroker()
-	// get seed info
-	// do seed job
-	// release job with delay (like a cron job)
-	broker.ReleaseWithDelay("scheduler", job, 60)
+func PrintArgs(job *linda.Job) error {
+	fmt.Println(job.Payload.Args)
+	linda.GetBroker().Delete(job.Queue, job)
 	return nil
 }
 ```

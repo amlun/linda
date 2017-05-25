@@ -32,7 +32,11 @@ func Init() error {
 		if err := flags(); err != nil {
 			return err
 		}
-		logrus.Debugf("init the scheduler with redis connection string %s", settings.Connection)
+		logrus.Infof("init the linda with redis connection: %s", settings.Connection)
+		logrus.Infof("init the linda with job queue name: %s", settings.Queue)
+		logrus.Infof("init the linda with job timeout: %d seconds", settings.Timeout)
+		logrus.Infof("init the linda with worker interval: %.1f", settings.IntervalFloat)
+		logrus.Infof("init the linda with worker numbers: %d", settings.Concurrency)
 		b, err := NewBroker(settings.Connection)
 		if err != nil {
 			return err
@@ -48,7 +52,7 @@ func Close() {
 	initMutex.Lock()
 	defer initMutex.Unlock()
 	if initialized {
-		logrus.Debug("close the linda...")
+		logrus.Infof("close linda...")
 		brokerConn.Close()
 		initialized = false
 	}
