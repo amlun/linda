@@ -11,7 +11,7 @@ Linda Broker provides a unified API across different broker (queue) services.
 
 Brokers allow you to defer the processing of a time consuming task.
 
-Use ReleaseWithDelay func, you can implement a cron job service.
+When job done, use ReleaseWithDelay func to release the job, you can implement a cron job service.
 
 Inspiration comes from [beanstalkd](https://github.com/kr/beanstalkd) and [goworker](https://github.com/benmanns/goworker) 
 
@@ -144,4 +144,3 @@ func PrintArgs(job *linda.Job) error {
 
 * [redigo](https://github.com/garyburd/redigo)
 * [goworker](https://github.com/benmanns/goworker)
-* [laravel/queue](https://github.com/laravel/framework)
