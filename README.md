@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/amlun/linda.png?branch=master)](https://travis-ci.org/amlun/linda)
 [![GoDoc](https://godoc.org/github.com/amlun/linda?status.svg)](https://godoc.org/github.com/amlun/linda)
+[![GoReport](https://goreportcard.com/badge/github.com/amlun/linda)](https://goreportcard.com/report/github.com/amlun/linda)
+[![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://raw.githubusercontent.com/amlun/linda/master/LICENSE)
 
 Linda is a background manager to poll jobs from broker and dispatch them to multi workers.
 
