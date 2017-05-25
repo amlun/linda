@@ -21,19 +21,13 @@ func (r *RedisBroker) Connect(url *neturl.URL) error {
 	var host string
 	var password string
 	var db string
-	switch url.Scheme {
-	case "redis":
-		network = "tcp"
-		host = url.Host
-		if url.User != nil {
-			password, _ = url.User.Password()
-		}
-		if len(url.Path) > 1 {
-			db = url.Path[1:]
-		}
-	case "unix":
-		network = "unix"
-		host = url.Path
+	network = "tcp"
+	host = url.Host
+	if url.User != nil {
+		password, _ = url.User.Password()
+	}
+	if len(url.Path) > 1 {
+		db = url.Path[1:]
 	}
 
 	r.pool = &redis.Pool{
