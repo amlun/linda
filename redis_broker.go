@@ -9,8 +9,7 @@ import (
 	"time"
 )
 
-// RedisBroker
-// broker driver with redis
+// RedisBroker  broker driver with redis
 type RedisBroker struct {
 	redisURL *neturl.URL
 	pool     *redis.Pool
