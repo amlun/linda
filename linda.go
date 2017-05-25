@@ -50,13 +50,6 @@ func Close() {
 	}
 }
 
-func GetBroker() Broker {
-	if initialized {
-		return brokerConn
-	}
-	return nil
-}
-
 func Run() error {
 	err := Init()
 	if err != nil {
