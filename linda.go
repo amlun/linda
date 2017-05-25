@@ -17,8 +17,7 @@ var (
 	settings    Settings
 )
 
-// SetSettings
-// set linda settings
+// SetSettings set linda settings
 func SetSettings(sets Settings) {
 	settings = sets
 }
