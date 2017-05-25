@@ -9,7 +9,7 @@ type Job struct {
 	Payload Payload
 }
 
-// job to string
+// String format job to string
 func (j *Job) String() string {
 	return fmt.Sprintf("In queue: %s | handle: %s(%v)", j.Queue, j.Payload.Class, j.Payload.Args)
 }

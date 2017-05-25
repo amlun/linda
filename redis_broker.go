@@ -17,18 +17,28 @@ type RedisBroker struct {
 
 // Connect broker backend with url
 func (r *RedisBroker) Connect(url *neturl.URL) error {
-	var host = url.Host
+	var network string
+	var host string
 	var password string
 	var db string
-	if url.User != nil {
-		password, _ = url.User.Password()
+	switch url.Scheme {
+	case "redis":
+		network = "tcp"
+		host = url.Host
+		if url.User != nil {
+			password, _ = url.User.Password()
+		}
+		if len(url.Path) > 1 {
+			db = url.Path[1:]
+		}
+	case "unix":
+		network = "unix"
+		host = url.Path
 	}
-	if len(url.Path) > 1 {
-		db = url.Path[1:]
-	}
+
 	r.pool = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", host)
+			c, err := redis.Dial(network, host)
 			if err != nil {
 				return nil, err
 			}

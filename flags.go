@@ -1,4 +1,4 @@
-// linda running options
+// Running linda
 //
 // Flags
 //
@@ -17,7 +17,7 @@
 //
 // -connection=redis://localhost:6379/
 // --the url of the broker
-// redis://user:pass@host:port/db
+// redis://user:pass@host:port/db or unix:///path/to/redis.sock
 
 package linda
 
