@@ -25,7 +25,7 @@ const (
 		return true`
 
 	// ReleaseScript -- Remove the job from the current queue...
-	// KEYS[1] - The "delayed" queue we release jobs onto, for example: queues:foo:delayed
+	// KEYS[1] - The queue we release jobs onto, for example: queues:foo
 	// KEYS[2] - The queue the jobs are currently on, for example: queues:foo:reserved
 	// ARGV[1] - The raw payload of the job to back to queue
 	ReleaseScript = `redis.call('zrem', KEYS[2], ARGV[1])
