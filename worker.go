@@ -9,7 +9,7 @@ type worker struct {
 	process
 }
 
-type workerFunc func(job *Job) error
+type workerFunc func(...interface{}) error
 
 func newWorker(id string) (*worker, error) {
 	process, err := newProcess("worker" + id)
@@ -50,5 +50,5 @@ func (w *worker) run(job *Job, workerFunc workerFunc) error {
 		}
 	}()
 	logrus.Infof("run job {%s}", job)
-	return workerFunc(job)
+	return workerFunc(job.Payload.Args...)
 }

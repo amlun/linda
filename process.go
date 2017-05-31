@@ -18,12 +18,14 @@ func newProcess(id string) (*process, error) {
 		log.Error(err)
 		return nil, err
 	}
-
-	return &process{
+	p := process{
 		Hostname: hostname,
 		Pid:      os.Getpid(),
 		ID:       id,
-	}, nil
+	}
+	// register on zookeeper or etcd Todo
+	// registerProcess(p)
+	return &p, nil
 }
 
 func (p *process) String() string {

@@ -141,7 +141,7 @@ func (r *RedisBroker) Release(queue string, job *Job) error {
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(0))
+	_, err = conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes)
 	if err != nil {
 		logrus.Error(err)
 		return err
@@ -160,7 +160,7 @@ func (r *RedisBroker) ReleaseWithDelay(queue string, job *Job, delay int64) erro
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(delay))
+	_, err = conn.Do("EVAL", ReleaseWithDelayScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(delay))
 	if err != nil {
 		logrus.Error(err)
 		return err

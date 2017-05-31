@@ -45,7 +45,7 @@ to install the dependencies
 ### Worker Type
 
 ```
-func(job *Job) error
+type workerFunc func(...interface{}) error
 ```
 
 ### Register Worker
@@ -103,10 +103,11 @@ func main() {
 	}
 }
 
-func PrintArgs(job *linda.Job) error {
-	fmt.Println(job.Payload.Args)
+func PrintArgs(args ...interface{}) error {
+	fmt.Println(args)
 	return nil
 }
+
 ```
 
 ## Features
@@ -115,8 +116,6 @@ func PrintArgs(job *linda.Job) error {
 
  - [x] Redis
  - [ ] beanstalkd
- - [ ] NSQ
- - [ ] Kafka
  - [ ] RabbitMQ
  
 ## Design
