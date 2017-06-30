@@ -133,9 +133,9 @@ func PrintArgs(args ...interface{}) error {
                         |                   |
    push                 v     reserve       |       delete
   -----------------> [READY] ---------> [RESERVED] --------> *poof*
-                        ^                |
-                         \               |
-                          `--------------'
+                        ^                   |
+                         \                  |
+                          `-----------------'
                            kick (time out)
  
 ```
