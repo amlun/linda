@@ -83,17 +83,17 @@ func (r *RedisBroker) migrateExpiredJobs(from string, to string) {
 	}
 }
 
-// Pop out a job to reserved state with its life time
+// Reserve out a job with its life time
 // if the reserved job is out of time(second)
 // poller will kick it back in to ready queue
 // if time out is 0, it means the job will be delete directly
-func (r *RedisBroker) Pop(queue string, timeout int64) (job *Job, err error) {
+func (r *RedisBroker) Reserve(queue string, timeout int64) (job *Job, err error) {
 	conn := r.pool.Get()
 	defer conn.Close()
 	var reply []byte
 	// reserve next job
 	if timeout > 0 {
-		reply, err = redis.Bytes(conn.Do("EVAL", PopJobScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
+		reply, err = redis.Bytes(conn.Do("EVAL", ReserveScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
 	} else {
 		reply, err = redis.Bytes(conn.Do("LPOP", queue))
 	}
@@ -131,28 +131,9 @@ func (r *RedisBroker) Delete(queue string, job *Job) error {
 	return nil
 }
 
-// Release the reserved job
-// mostly it means the job failed to be done or time out
-func (r *RedisBroker) Release(queue string, job *Job) error {
-	conn := r.pool.Get()
-	defer conn.Close()
-	bytes, err := json.Marshal(job)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-	_, err = conn.Do("EVAL", ReleaseScript, 2, queue, fmt.Sprintf("%s:reserved", queue), bytes)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-	logrus.Infof("delete and release job {%s}", job)
-	return nil
-}
-
-// ReleaseWithDelay is used for release the reserved job and push it back in to ready queue withe a delay(second) time
+// Release is used for release the reserved job and push it back in to ready queue withe a delay(second) time
 // this function maybe used for cron jobs
-func (r *RedisBroker) ReleaseWithDelay(queue string, job *Job, delay int64) error {
+func (r *RedisBroker) Release(queue string, job *Job, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
 	bytes, err := json.Marshal(job)
@@ -160,7 +141,7 @@ func (r *RedisBroker) ReleaseWithDelay(queue string, job *Job, delay int64) erro
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("EVAL", ReleaseWithDelayScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(delay))
+	_, err = conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(delay))
 	if err != nil {
 		logrus.Error(err)
 		return err

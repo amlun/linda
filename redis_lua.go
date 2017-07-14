@@ -3,11 +3,11 @@ package linda
 const (
 	//SizeScript = `return redis.call('llen', KEYS[1]) + redis.call('zcard', KEYS[2]) + redis.call('zcard', KEYS[3])`
 
-	// PopJobScript -- Pop the first job off of the queue...
+	// ReserveScript -- Reserve the first job off of the queue...
 	// KEYS[1] - The queue to pop jobs from, for example: queues:foo
 	// KEYS[2] - The queue to place reserved jobs on, for example: queues:foo:reserved
 	// ARGV[1] - The time at which the reserved job will expire
-	PopJobScript = `local job = redis.call('lpop', KEYS[1])
+	ReserveScript = `local job = redis.call('lpop', KEYS[1])
 		if(job ~= false) then
 			-- place job on the reserved queue...
 			redis.call('zadd', KEYS[2], ARGV[1], job)
@@ -19,18 +19,9 @@ const (
 	// KEYS[2] - The queue the jobs are currently on, for example: queues:foo:reserved
 	// ARGV[1] - The raw payload of the job to add to the "delayed" queue
 	// ARGV[2] - The UNIX timestamp at which the job should become available
-	ReleaseWithDelayScript = `redis.call('zrem', KEYS[2], ARGV[1])
-		-- Add the job onto the "delayed" queue...
-		redis.call('zadd', KEYS[1], ARGV[2], ARGV[1])
-		return true`
-
-	// ReleaseScript -- Remove the job from the current queue...
-	// KEYS[1] - The queue we release jobs onto, for example: queues:foo
-	// KEYS[2] - The queue the jobs are currently on, for example: queues:foo:reserved
-	// ARGV[1] - The raw payload of the job to back to queue
 	ReleaseScript = `redis.call('zrem', KEYS[2], ARGV[1])
 		-- Add the job onto the "delayed" queue...
-		redis.call('rpush', KEYS[1], ARGV[1])
+		redis.call('zadd', KEYS[1], ARGV[2], ARGV[1])
 		return true`
 
 	// MigrateJobsScript -- Get all of the jobs with an expired "score"...

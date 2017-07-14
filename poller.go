@@ -43,7 +43,7 @@ func (p *poller) poll(queue string, timeout int64, interval time.Duration, quit 
 			case <-quit:
 				return
 			default:
-				job, err := brokerConn.Pop(queue, timeout)
+				job, err := brokerConn.Reserve(queue, timeout)
 				if err != nil {
 					logrus.Error(err)
 					return

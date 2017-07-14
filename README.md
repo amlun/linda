@@ -59,10 +59,9 @@ type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
 	MigrateExpiredJobs(queue string)
-	Pop(queue string, timeout int64) (*Job, error)
+	Reserve(queue string, timeout int64) (*Job, error)
 	Delete(queue string, job *Job) error
-	Release(queue string, job *Job) error
-	ReleaseWithDelay(queue string, job *Job, delay int64) error
+	Release(queue string, job *Job, delay int64) error
 	Push(job *Job, queue string) error
 	Later(delay int64, job *Job, queue string) error
 }
