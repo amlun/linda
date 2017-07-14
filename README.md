@@ -125,17 +125,17 @@ func PrintArgs(args ...interface{}) error {
 
 ### Job State
 ```
-   later                       release with delay
+   later                                release
   ----------------> [DELAYED] <------------.
                         |                   |
-                migrate | (time passes)     |
+                   kick | (time passes)     |
                         |                   |
    push                 v     reserve       |       delete
   -----------------> [READY] ---------> [RESERVED] --------> *poof*
-                        ^                |
-                         \    release    |
-                          `--------------'
-                           migrate (time out)
+                        ^                   |
+                         \                  |
+                          `-----------------'
+                           kick (time out)
  
 ```
 ## Thanks
