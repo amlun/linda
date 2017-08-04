@@ -6,7 +6,7 @@ import "fmt"
 // it contains queue name and payload
 type Job struct {
 	Queue   string `json:"queue"`
-	Period  int64 `json:"period"`
+	Period  int64  `json:"period"`
 	Payload Payload
 }
 
