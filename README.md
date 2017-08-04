@@ -13,6 +13,8 @@ Brokers allow you to defer the processing of a time consuming task.
 
 When job done, use Release func to release the job with a delay (seconds), you can implement a cron job service.
 
+The real period is job.Period + Interval
+
 Inspiration comes from [beanstalkd](https://github.com/kr/beanstalkd) and [goworker](https://github.com/benmanns/goworker) 
 
 ## Installation
@@ -74,7 +76,7 @@ use redis-cli push jobs to queue
 ```
 RPUSH print "{\"queue\":\"print\",\"period\":0,\"Payload\":{\"class\":\"printArgs\",\"args\":[\"a\",\"b\",\"c\"]}}"
 RPUSH print "{\"queue\":\"print\",\"period\":0,\"Payload\":{\"class\":\"printArgs\",\"args\":[\"A\",\"B\",\"C\"]}}"
-RPUSH print "{\"queue\":\"print\",\"period\":0,\"Payload\":{\"class\":\"printArgs\",\"args\":[1,2,3,4,5,6,7]}}"
+RPUSH print "{\"queue\":\"print\",\"period\":300,\"Payload\":{\"class\":\"printArgs\",\"args\":[1,2,3,4,5,6,7]}}"
 ```
 
 Worker run to consume the job

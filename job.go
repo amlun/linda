@@ -12,5 +12,5 @@ type Job struct {
 
 // String format job to string
 func (j *Job) String() string {
-	return fmt.Sprintf("In queue: %s | handle: %s(%v)", j.Queue, j.Payload.Class, j.Payload.Args)
+	return fmt.Sprintf("In queue: %s | period: %d| handle: %s(%v) ", j.Queue, j.Period, j.Payload.Class, j.Payload.Args)
 }

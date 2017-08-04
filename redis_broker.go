@@ -146,7 +146,7 @@ func (r *RedisBroker) Release(queue string, job *Job, delay int64) error {
 		logrus.Error(err)
 		return err
 	}
-	logrus.Infof("delete and release job {%s}", job)
+	logrus.Infof("release job {%s} with delay {%d}", job, delay)
 	return nil
 }
 

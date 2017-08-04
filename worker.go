@@ -32,16 +32,10 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 		}()
 		for job := range jobs {
 			if workerFunc, ok := workers[job.Payload.Class]; ok {
-				err := w.run(job, workerFunc)
-				if err != nil {
+				if err := w.run(job, workerFunc); err != nil {
 					logrus.Error(err)
 				}
-				if job.Period == 0 {
-					err = brokerConn.Delete(job.Queue, job)
-				} else {
-					err = brokerConn.Release(job.Queue, job, job.Period)
-				}
-				if err != nil {
+				if err := w.nextRun(job); err != nil {
 					logrus.Error(err)
 				}
 			} else {
@@ -59,4 +53,14 @@ func (w *worker) run(job *Job, workerFunc workerFunc) error {
 	}()
 	logrus.Infof("run job {%s}", job)
 	return workerFunc(job.Payload.Args...)
+}
+
+func (w *worker) nextRun(job *Job) error {
+	var err error
+	if job.Period == 0 {
+		err = brokerConn.Delete(job.Queue, job)
+	} else {
+		err = brokerConn.Release(job.Queue, job, job.Period)
+	}
+	return err
 }
