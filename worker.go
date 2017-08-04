@@ -36,6 +36,14 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 				if err != nil {
 					logrus.Error(err)
 				}
+				if job.Period == 0 {
+					err = brokerConn.Delete(job.Queue, job)
+				} else {
+					err = brokerConn.Release(job.Queue, job, job.Period)
+				}
+				if err != nil {
+					logrus.Error(err)
+				}
 			} else {
 				logrus.Errorf("no worker for job {%s}", job)
 			}

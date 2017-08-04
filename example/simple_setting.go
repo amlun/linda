@@ -7,9 +7,9 @@ import (
 
 var queue = "simple"
 
-// RPUSH simple "{\"queue\":\"simple\",\"Payload\":{\"class\":\"MyClass\",\"args\":[\"a\",\"b\",\"c\"]}}"
-// RPUSH simple "{\"queue\":\"simple\",\"Payload\":{\"class\":\"MyClass\",\"args\":[\"x\",\"y\",\"z\"]}}"
-// RPUSH simple "{\"queue\":\"simple\",\"Payload\":{\"class\":\"MyClass\",\"args\":[1,2,3]}}"
+// RPUSH simple "{\"queue\":\"simple\",\"period\":0,\"Payload\":{\"class\":\"MyClass\",\"args\":[\"a\",\"b\",\"c\"]}}"
+// RPUSH simple "{\"queue\":\"simple\",\"period\":0,\"Payload\":{\"class\":\"MyClass\",\"args\":[\"x\",\"y\",\"z\"]}}"
+// RPUSH simple "{\"queue\":\"simple\",\"period\":0,\"Payload\":{\"class\":\"MyClass\",\"args\":[1,2,3]}}"
 func init() {
 	settings := linda.Settings{
 		Queue:         queue,
