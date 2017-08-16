@@ -81,7 +81,7 @@ RPUSH print "{\"queue\":\"print\",\"period\":300,\"Payload\":{\"class\":\"printA
 
 Worker run to consume the job
 ```sh
-go run example/print_args -queue=print -connection=redis://localhost:6379/
+go run example/print_args.go -queue=print -connection=redis://localhost:6379/
 ```
 
 example/print_args.go
@@ -95,7 +95,7 @@ import (
 )
 
 func init() {
-	linda.RegisterWorkers("PrintArgs", PrintArgs)
+	linda.RegisterWorkers("printArgs", PrintArgs)
 }
 
 func main() {
