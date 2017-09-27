@@ -58,9 +58,9 @@ func (w *worker) run(job *Job, workerFunc workerFunc) error {
 func (w *worker) nextRun(job *Job) error {
 	var err error
 	if job.Period == 0 {
-		err = brokerConn.Delete(job.Queue, job)
+		err = broker.Delete(job.Queue, job.ID)
 	} else {
-		err = brokerConn.Release(job.Queue, job, job.Period)
+		err = broker.Release(job.Queue, job.ID, job.Period)
 	}
 	return err
 }
