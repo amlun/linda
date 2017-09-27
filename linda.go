@@ -14,7 +14,7 @@ var (
 	initialized       bool
 	config            *Config
 	quit              chan bool
-	ErrNotInitialized = errors.New("")
+	ErrNotInitialized = errors.New("you must init linda first")
 )
 
 // Open linda with config
