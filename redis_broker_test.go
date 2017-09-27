@@ -1,15 +1,15 @@
 package linda
 
 import (
-	"testing"
 	"github.com/sirupsen/logrus"
 	neturl "net/url"
+	"testing"
 )
 
 func setupRedisBroker(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	broker = &RedisBroker{}
-	url, err := neturl.Parse("redis://10.60.81.83:6379/")
+	url, err := neturl.Parse("redis://localhost:6379/")
 	if err != nil {
 		t.Error(err)
 		return

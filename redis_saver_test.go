@@ -1,10 +1,10 @@
 package linda
 
 import (
-	"testing"
-	"time"
 	"github.com/sirupsen/logrus"
 	neturl "net/url"
+	"testing"
+	"time"
 )
 
 func setupRedisSaverTestCase() {
@@ -14,7 +14,7 @@ func setupRedisSaverTestCase() {
 func TestRedisSaver_Connect(t *testing.T) {
 	setupRedisSaverTestCase()
 	saver = &RedisSaver{}
-	url, err := neturl.Parse("redis://10.60.81.83:6379/")
+	url, err := neturl.Parse("redis://localhost:6379/")
 	if err != nil {
 		t.Error(err)
 		return
