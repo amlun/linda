@@ -33,7 +33,7 @@ func (r *RedisBroker) Connect(url *neturl.URL) error {
 
 	r.pool = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial(network, host)
+			c, err := redis.Dial(network, host, redis.DialConnectTimeout(time.Second), redis.DialReadTimeout(time.Second), redis.DialWriteTimeout(time.Second))
 			if err != nil {
 				return nil, err
 			}
