@@ -1,8 +1,8 @@
 package linda
 
 import (
-	"github.com/sirupsen/logrus"
 	"time"
+	"github.com/sirupsen/logrus"
 )
 
 type poller struct {
@@ -20,47 +20,37 @@ func newPoller() (*poller, error) {
 	}, nil
 }
 
-func (p *poller) poll(queue string, timeout int64, interval time.Duration, quit <-chan bool) <-chan *Job {
-	logrus.Debug("poller poll start...")
+func (p *poller) poll(queue string, timeout int64, interval time.Duration) <-chan *Job {
 	jobs := make(chan *Job)
 	go func() {
-		for {
-			brokerConn.MigrateExpiredJobs(queue)
-			logrus.Debugf("sleep for migrate expire jobs %v...", interval)
-			timeout := time.After(interval)
-			select {
-			case <-timeout:
-			}
-		}
-	}()
-	go func() {
+		logrus.Debugf("poller {%s} start...", p)
 		defer func() {
+			logrus.Debugf("poller {%s} stop...", p)
 			close(jobs)
-			logrus.Debug("poller poll stop...")
 		}()
 		for {
 			select {
 			case <-quit:
 				return
 			default:
-				job, err := brokerConn.Reserve(queue, timeout)
-				if err != nil {
-					logrus.Error(err)
-					return
-				}
-				if job != nil {
-					select {
-					case jobs <- job:
-					case <-quit:
-						return
+				broker.MigrateExpiredJobs(queue)
+				jobID, _ := broker.Reserve(queue, timeout)
+				if jobID != "" { // push job to jobs chan
+					job, _ := saver.Get(jobID)
+					if job != nil {
+						select {
+						case jobs <- job:
+						case <-quit:
+							return
+						}
 					}
-				} else {
-					logrus.Debugf("sleep for get job %v...", interval)
-					timeout := time.After(interval)
+				} else { // sleep ...
+					sleep := time.After(interval)
+					logrus.Debugf("poller sleep {%s}", interval)
 					select {
 					case <-quit:
 						return
-					case <-timeout:
+					case <-sleep:
 					}
 				}
 			}

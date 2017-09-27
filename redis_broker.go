@@ -1,7 +1,6 @@
 package linda
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/sirupsen/logrus"
@@ -17,6 +16,8 @@ type RedisBroker struct {
 
 // Connect broker backend with url
 func (r *RedisBroker) Connect(url *neturl.URL) error {
+	r.redisURL = url
+
 	var network string
 	var host string
 	var password string
@@ -32,7 +33,7 @@ func (r *RedisBroker) Connect(url *neturl.URL) error {
 
 	r.pool = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial(network, host)
+			c, err := redis.Dial(network, host, redis.DialConnectTimeout(time.Second), redis.DialReadTimeout(time.Second), redis.DialWriteTimeout(time.Second))
 			if err != nil {
 				return nil, err
 			}
@@ -76,114 +77,81 @@ func (r *RedisBroker) MigrateExpiredJobs(queue string) {
 func (r *RedisBroker) migrateExpiredJobs(from string, to string) {
 	conn := r.pool.Get()
 	defer conn.Close()
-	logrus.Debugf("migrate expired jobs from %s to %s", from, to)
-	_, err := conn.Do("EVAL", MigrateJobsScript, 2, from, to, time.Now().Unix())
-	if err != nil {
+	if _, err := conn.Do("EVAL", MigrateJobsScript, 2, from, to, time.Now().Unix()); err != nil {
 		logrus.Error(err)
+		return
 	}
+	logrus.Debugf("migrate expired jobs from %s to %s", from, to)
 }
 
-// Reserve out a job with its life time
+// Reserve out a job [id] from broker with its life time
 // if the reserved job is out of time(second)
 // poller will kick it back in to ready queue
 // if time out is 0, it means the job will be delete directly
-func (r *RedisBroker) Reserve(queue string, timeout int64) (job *Job, err error) {
+func (r *RedisBroker) Reserve(queue string, timeout int64) (id string, err error) {
 	conn := r.pool.Get()
 	defer conn.Close()
-	var reply []byte
 	// reserve next job
 	if timeout > 0 {
-		reply, err = redis.Bytes(conn.Do("EVAL", ReserveScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
+		id, err = redis.String(conn.Do("EVAL", ReserveScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
 	} else {
-		reply, err = redis.Bytes(conn.Do("LPOP", queue))
-	}
-	if err == redis.ErrNil {
-		return nil, nil
+		id, err = redis.String(conn.Do("LPOP", queue))
 	}
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	err = json.Unmarshal(reply, &job)
-	if err != nil {
-		logrus.Error(err)
-		return nil, err
-	}
-	logrus.Debugf("pop job {%s}", job)
-	return job, nil
+	logrus.Debugf("pop job {%s} from queue {%s}", id, queue)
+	return id, nil
 }
 
-// Delete the reserved job
+// Delete the reserved job [id] from broker
 // most of the time it means the job has been done successfully
-func (r *RedisBroker) Delete(queue string, job *Job) error {
+func (r *RedisBroker) Delete(queue, id string) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	bytes, err := json.Marshal(job)
-	if err != nil {
+	if _, err := conn.Do("ZREM", fmt.Sprintf("%s:reserved", queue), id); err != nil {
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("ZREM", fmt.Sprintf("%s:reserved", queue), bytes)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-	logrus.Infof("delete reserved job {%s}", job)
+	logrus.Infof("delete reserved job {%s} from queue {%s}", id, queue)
 	return nil
 }
 
 // Release is used for release the reserved job and push it back in to ready queue withe a delay(second) time
 // this function maybe used for cron jobs
-func (r *RedisBroker) Release(queue string, job *Job, delay int64) error {
+func (r *RedisBroker) Release(queue, id string, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	bytes, err := json.Marshal(job)
-	if err != nil {
+	if _, err := conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), id, delayAt(delay)); err != nil {
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), bytes, delayAt(delay))
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-	logrus.Infof("release job {%s} with delay {%d}", job, delay)
+	logrus.Infof("release job {%s} with delay {%d} to queue {%s}", id, delay, queue)
 	return nil
 }
 
 // Push a job in to the queue
-func (r *RedisBroker) Push(job *Job, queue string) error {
+func (r *RedisBroker) Push(queue, id string) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	bytes, err := json.Marshal(job)
-	if err != nil {
+	if _, err := conn.Do("RPUSH", queue, id); err != nil {
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("RPUSH", queue, bytes)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-	logrus.Infof("push job {%s}", job)
+	logrus.Infof("push job {%s} to queue {%s}", id, queue)
 	return nil
 }
 
 // Later is used for push a job in to the queue with a delay(second) time
 // the job should be handled in the future time
-func (r *RedisBroker) Later(delay int64, job *Job, queue string) error {
+func (r *RedisBroker) Later(queue, id string, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	bytes, err := json.Marshal(job)
-	if err != nil {
+	if _, err := conn.Do("ZADD", fmt.Sprintf("%s:delayed", queue), delayAt(delay), id); err != nil {
 		logrus.Error(err)
 		return err
 	}
-	_, err = conn.Do("ZADD", fmt.Sprintf("%s:delayed", queue), delayAt(delay), bytes)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-	logrus.Infof("push job {%s} with delay %d", job, delay)
+	logrus.Infof("push job {%s} with delay {%d} to queue {%s}", id, delay, queue)
 	return nil
 }
 

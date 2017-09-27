@@ -2,87 +2,80 @@ package linda
 
 import (
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
 	"strconv"
 	"sync"
-	"syscall"
-	"time"
+	"errors"
 )
 
 var (
-	brokerConn  Broker
-	initMutex   sync.Mutex
-	initialized bool
-	settings    Settings
+	broker            Broker
+	saver             Saver
+	initMutex         sync.Mutex
+	initialized       bool
+	config            *Config
+	quit              chan bool
+	ErrNotInitialized = errors.New("you must init linda first")
 )
 
-// SetSettings set linda settings
-func SetSettings(sets Settings) {
-	settings = sets
-}
-
-// Init linda with settings
+// Open linda with config
 // get instance of broker
-func Init() error {
+func Init(c Config, b Broker, s Saver) error {
 	initMutex.Lock()
 	defer initMutex.Unlock()
 	if !initialized {
-		logrus.Debug("start linda and init...")
-		if err := flags(); err != nil {
-			return err
-		}
-		logrus.Infof("init the linda with redis connection: %s", settings.Connection)
-		logrus.Infof("init the linda with job queue name: %s", settings.Queue)
-		logrus.Infof("init the linda with job timeout: %d seconds", settings.Timeout)
-		logrus.Infof("init the linda with worker interval: %.1f", settings.IntervalFloat)
-		logrus.Infof("init the linda with worker numbers: %d", settings.Concurrency)
-		b, err := NewBroker(settings.Connection)
-		if err != nil {
-			return err
-		}
-		brokerConn = b
+		logrus.Debugf("init linda...")
+		config = &c
+		quit = make(chan bool)
+		// init the broker
+		broker = b
+		// init the saver
+		saver = s
+		// set initialized true
 		initialized = true
 	}
 	return nil
 }
 
-// Close linda with close broker
+// Close linda with close broker and saver
 func Close() {
 	initMutex.Lock()
 	defer initMutex.Unlock()
 	if initialized {
-		logrus.Infof("close linda...")
-		brokerConn.Close()
+		logrus.Debugf("close linda...")
+		broker.Close()
+		saver.Close()
+		close(quit)
 		initialized = false
 	}
 }
 
-// GetBroker will return the initialized broker of linda
-func GetBroker() Broker {
-	if initialized {
-		return brokerConn
-	}
-	return nil
+func Quit() {
+	quit <- true
 }
 
 // Run linda, it also call init function self
 func Run() error {
-	err := Init()
-	if err != nil {
-		return err
+	if !initialized {
+		return ErrNotInitialized
 	}
 	defer Close()
-	logrus.Debug("start the poller to get jobs and migrate expired jobs")
+	if err := run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func run() error {
+	// poller
 	poller, err := newPoller()
 	if err != nil {
 		return err
 	}
-	quit := signals()
-	jobs := poller.poll(settings.Queue, settings.Timeout, time.Duration(settings.Interval), quit)
+	jobs := poller.poll(config.Queue, config.Timeout, config.Interval)
+
+	// workers
 	var monitor sync.WaitGroup
-	logrus.Debugf("start %d workers to do the job", settings.Concurrency)
-	for i := 0; i < settings.Concurrency; i++ {
+	for i := 0; i < config.WorkerNum; i++ {
 		worker, err := newWorker(strconv.Itoa(i))
 		if err != nil {
 			return err
@@ -90,24 +83,6 @@ func Run() error {
 		worker.work(jobs, &monitor)
 	}
 	monitor.Wait()
+
 	return nil
-}
-
-// Signal Handling
-func signals() <-chan bool {
-	quit := make(chan bool)
-	go func() {
-		signals := make(chan os.Signal)
-		defer close(signals)
-		signal.Notify(signals, syscall.SIGQUIT, syscall.SIGTERM, os.Interrupt)
-		defer signalStop(signals)
-		<-signals
-		quit <- true
-	}()
-	return quit
-}
-
-// Stops signals channel.
-func signalStop(c chan<- os.Signal) {
-	signal.Stop(c)
 }

@@ -9,6 +9,8 @@ Linda is a background manager to poll jobs from broker and dispatch them to mult
 
 Linda Broker provides a unified API across different broker (queue) services.
 
+Linda Saver provides a unified API across different saver (db) services.
+
 Brokers allow you to defer the processing of a time consuming task.
 
 When job done, use Release func to release the job with a delay (seconds), you can implement a cron job service.
@@ -36,6 +38,9 @@ to install the dependencies
 * Broker
 > message transport [MQ]
 
+* Saver
+> job info storage [Database]
+
 * poller
 > poll job from the broker and send to local job channels
 
@@ -61,30 +66,92 @@ type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
 	MigrateExpiredJobs(queue string)
-	Reserve(queue string, timeout int64) (*Job, error)
-	Delete(queue string, job *Job) error
-	Release(queue string, job *Job, delay int64) error
-	Push(job *Job, queue string) error
-	Later(delay int64, job *Job, queue string) error
+	Reserve(queue string, timeout int64) (string, error)
+	Delete(queue, id string) error
+	Release(queue, id string, delay int64) error
+	Push(queue, id string) error
+	Later(queue, id string, delay int64) error
+}
+```
+
+### Saver Interface
+```
+type Saver interface {
+	Connect(url *neturl.URL) error
+	Close() error
+	Put(job *Job) error
+	Get(id string) (*Job, error)
 }
 ```
 
 ### Examples
 
-use redis-cli push jobs to queue
+Add jobs to saver and push them to broker
 
+```sh
+go run example/push_jobs/main.go
 ```
-RPUSH print "{\"queue\":\"print\",\"period\":0,\"Payload\":{\"class\":\"printArgs\",\"args\":[\"a\",\"b\",\"c\"]}}"
-RPUSH print "{\"queue\":\"print\",\"period\":0,\"Payload\":{\"class\":\"printArgs\",\"args\":[\"A\",\"B\",\"C\"]}}"
-RPUSH print "{\"queue\":\"print\",\"period\":300,\"Payload\":{\"class\":\"printArgs\",\"args\":[1,2,3,4,5,6,7]}}"
+
+example/push_jobs/main.go
+
+```go
+package main
+
+import (
+	"github.com/amlun/linda"
+	"github.com/sirupsen/logrus"
+	"time"
+)
+
+func main() {
+	var err error
+	var b linda.Broker
+	var s linda.Saver
+	// broker
+	if b, err = linda.NewBroker("redis://localhost:6379/"); err != nil {
+		logrus.Error(err)
+		return
+	}
+	// saver
+	if s, err = linda.NewSaver("redis://localhost:6379/"); err != nil {
+		logrus.Error(err)
+		return
+	}
+	// job
+	var jobID = "1"
+	var queue = "test"
+	var job = &linda.Job{
+		ID:        jobID,
+		Queue:     queue,
+		Period:    60,
+		Retry:     3,
+		CreatedAt: time.Now(),
+		Payload: linda.Payload{
+			Class: "printArgs",
+			Args:  []interface{}{"a", "b", "c"},
+		},
+	}
+	// save job
+	if err = s.Put(job); err != nil {
+		logrus.Error(err)
+		return
+	}
+	// push to broker
+	if err = b.Push(queue, jobID); err != nil {
+		logrus.Error(err)
+		return
+	}
+}
+
 ```
 
 Worker run to consume the job
+
 ```sh
-go run example/print_args.go -queue=print -connection=redis://localhost:6379/
+go run example/print_args/main.go
 ```
 
-example/print_args.go
+example/print_args/main.go
 
 ```go
 package main
@@ -92,6 +159,11 @@ package main
 import (
 	"fmt"
 	"github.com/amlun/linda"
+	"github.com/sirupsen/logrus"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func init() {
@@ -99,6 +171,27 @@ func init() {
 }
 
 func main() {
+	logrus.SetLevel(logrus.DebugLevel)
+	// broker
+	b, _ := linda.NewBroker("redis://localhost:6379/")
+	// saver
+	s, _ := linda.NewSaver("redis://localhost:6379/")
+	// config
+	c := linda.Config{
+		Queue:     "test",
+		Timeout:   60,
+		Interval:  time.Second,
+		WorkerNum: 4,
+	}
+	quit := signals()
+	linda.Init(c, b, s)
+	go func() {
+		defer func() {
+			linda.Quit()
+		}()
+		<-quit
+	}()
+
 	if err := linda.Run(); err != nil {
 		fmt.Println("Error:", err)
 	}
@@ -107,6 +200,25 @@ func main() {
 func PrintArgs(args ...interface{}) error {
 	fmt.Println(args)
 	return nil
+}
+
+// Signal Handling
+func signals() <-chan bool {
+	quit := make(chan bool)
+	go func() {
+		signals := make(chan os.Signal)
+		defer close(signals)
+		signal.Notify(signals, syscall.SIGQUIT, syscall.SIGTERM, os.Interrupt)
+		defer signalStop(signals)
+		<-signals
+		quit <- true
+	}()
+	return quit
+}
+
+// Stops signals channel.
+func signalStop(c chan<- os.Signal) {
+	signal.Stop(c)
 }
 
 ```

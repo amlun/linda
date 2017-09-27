@@ -1,8 +1,12 @@
 package linda
 
 import (
-	"fmt"
+	"errors"
 	neturl "net/url"
+)
+
+var (
+	UnknownBroker = errors.New("unknown broker scheme")
 )
 
 // Broker is message transport[MQ]
@@ -11,11 +15,11 @@ type Broker interface {
 	Connect(url *neturl.URL) error
 	Close() error
 	MigrateExpiredJobs(queue string)
-	Reserve(queue string, timeout int64) (*Job, error)
-	Delete(queue string, job *Job) error
-	Release(queue string, job *Job, delay int64) error
-	Push(job *Job, queue string) error
-	Later(delay int64, job *Job, queue string) error
+	Reserve(queue string, timeout int64) (string, error)
+	Delete(queue, id string) error
+	Release(queue, id string, delay int64) error
+	Push(queue, id string) error
+	Later(queue, id string, delay int64) error
 }
 
 var brokerMaps = make(map[string]Broker)
@@ -45,7 +49,7 @@ func NewBroker(urlString string) (Broker, error) {
 		}
 		return b, nil
 	}
-	return nil, fmt.Errorf("Unknow broker scheme [%s]", scheme)
+	return nil, UnknownBroker
 }
 
 func init() {
