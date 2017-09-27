@@ -89,10 +89,10 @@ type Saver interface {
 Add jobs to saver and push them to broker
 
 ```sh
-go run example/push_jobs.go
+go run example/push_jobs/main.go
 ```
 
-example/push_jobs.go
+example/push_jobs/main.go
 
 ```go
 package main
@@ -148,10 +148,10 @@ func main() {
 Worker run to consume the job
 
 ```sh
-go run example/print_args.go
+go run example/print_args/main.go
 ```
 
-example/print_args.go
+example/print_args/main.go
 
 ```go
 package main
