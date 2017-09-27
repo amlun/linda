@@ -1,6 +1,7 @@
 package linda
 
 import (
+	"github.com/garyburd/redigo/redis"
 	"github.com/sirupsen/logrus"
 	neturl "net/url"
 	"testing"
@@ -40,7 +41,7 @@ func TestRedisSaver_Close(t *testing.T) {
 func TestRedisSaver_Get(t *testing.T) {
 	TestRedisSaver_Connect(t)
 	job, err := saver.Get("1")
-	if err != nil {
+	if err != nil && err != redis.ErrNil {
 		t.Error(err)
 		return
 	}
