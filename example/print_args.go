@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/amlun/linda"
-	"time"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func init() {
@@ -17,9 +17,9 @@ func init() {
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
 	// broker
-	b, _ := linda.NewBroker("redis://10.60.81.83:6379/")
+	b, _ := linda.NewBroker("redis://localhost:6379/")
 	// saver
-	s, _ := linda.NewSaver("redis://10.60.81.83:6379/")
+	s, _ := linda.NewSaver("redis://localhost:6379/")
 	// config
 	c := linda.Config{
 		Queue:     "test",
