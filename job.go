@@ -25,8 +25,9 @@ type Payload struct {
 
 // State is the job's running state
 type State struct {
-	RunTime time.Time `json:"run_time"`
-	Retries int64     `json:"retries"`
+	RunTimes  int64     `json:"run_times"`
+	LastRunAt time.Time `json:"last_run_at"`
+	Retries   int64     `json:"retries"`
 }
 
 // String format job to string

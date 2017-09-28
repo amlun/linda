@@ -71,7 +71,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	jobs := poller.poll(config.Queue, config.Timeout, config.Interval)
+	jobIDs := poller.poll(config.Queue, config.Timeout, config.Interval)
 
 	// workers
 	var monitor sync.WaitGroup
@@ -80,7 +80,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		worker.work(jobs, &monitor)
+		worker.work(jobIDs, &monitor)
 	}
 	monitor.Wait()
 

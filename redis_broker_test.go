@@ -2,19 +2,14 @@ package linda
 
 import (
 	"github.com/sirupsen/logrus"
-	neturl "net/url"
 	"testing"
+	"time"
 )
 
 func setupRedisBroker(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	broker = &RedisBroker{}
-	url, err := neturl.Parse("redis://localhost:6379/")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if err := broker.Connect(url); err != nil {
+	if err := broker.Connect("redis://localhost:6379/", time.Second); err != nil {
 		t.Error(err)
 	} else {
 		t.Log("setupRedisBroker")

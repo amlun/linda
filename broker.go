@@ -3,6 +3,8 @@ package linda
 import (
 	"errors"
 	neturl "net/url"
+	"time"
+	"strconv"
 )
 
 var (
@@ -12,7 +14,7 @@ var (
 // Broker is message transport[MQ]
 // it provides a unified API, support multi drivers
 type Broker interface {
-	Connect(url *neturl.URL) error
+	Connect(rawUrl string, timeout time.Duration) error
 	Close() error
 	MigrateExpiredJobs(queue string)
 	Reserve(queue string, timeout int64) (string, error)
@@ -36,14 +38,18 @@ func RegisterBroker(scheme string, broker Broker) {
 // NewBroker will get an instance of broker with url string
 // if there is no matched scheme, return error
 // now broker only support redis
-func NewBroker(urlString string) (Broker, error) {
-	url, err := neturl.Parse(urlString)
+func NewBroker(rawUrl string) (Broker, error) {
+	url, err := neturl.Parse(rawUrl)
 	if err != nil {
 		return nil, err
 	}
 	scheme := url.Scheme
+	timeout, err := strconv.Atoi(url.Query().Get("timeout"))
+	if err != nil {
+		timeout = 1000
+	}
 	if b, ok := brokerMaps[scheme]; ok {
-		err := b.Connect(url)
+		err := b.Connect(rawUrl, time.Duration(timeout)*time.Millisecond)
 		if err != nil {
 			return nil, err
 		}

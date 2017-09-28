@@ -4,52 +4,35 @@ import (
 	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/sirupsen/logrus"
-	neturl "net/url"
 	"time"
+)
+
+const (
+	// QueueName
+	// the main queue name
+	QueueName = "queue:%s"
+	// ReservedQueueName
+	// pop the job and send it to reserved queue
+	ReservedQueueName = "queue:%s:reserved"
+	// DelayedQueueName
+	// push the job back into delayed queue
+	DelayedQueueName = "queue:%s:delayed"
 )
 
 // RedisBroker  broker driver with redis
 type RedisBroker struct {
-	redisURL *neturl.URL
-	pool     *redis.Pool
+	url  string
+	pool *redis.Pool
 }
 
 // Connect broker backend with url
-func (r *RedisBroker) Connect(url *neturl.URL) error {
-	r.redisURL = url
-
-	var network string
-	var host string
-	var password string
-	var db string
-	network = "tcp"
-	host = url.Host
-	if url.User != nil {
-		password, _ = url.User.Password()
-	}
-	if len(url.Path) > 1 {
-		db = url.Path[1:]
-	}
-
+func (r *RedisBroker) Connect(rawUrl string, timeout time.Duration) error {
+	r.url = rawUrl
 	r.pool = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial(network, host, redis.DialConnectTimeout(time.Second), redis.DialReadTimeout(time.Second), redis.DialWriteTimeout(time.Second))
+			c, err := redis.DialURL(rawUrl, redis.DialConnectTimeout(timeout))
 			if err != nil {
 				return nil, err
-			}
-			if password != "" {
-				_, err := c.Do("AUTH", password)
-				if err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			if db != "" {
-				_, err := c.Do("SELECT", db)
-				if err != nil {
-					c.Close()
-					return nil, err
-				}
 			}
 			return c, nil
 		},
@@ -70,8 +53,8 @@ func (r *RedisBroker) Close() error {
 
 // MigrateExpiredJobs is used for migrate expired jobs to ready queue
 func (r *RedisBroker) MigrateExpiredJobs(queue string) {
-	r.migrateExpiredJobs(fmt.Sprintf("%s:reserved", queue), queue)
-	r.migrateExpiredJobs(fmt.Sprintf("%s:delayed", queue), queue)
+	r.migrateExpiredJobs(fmt.Sprintf(ReservedQueueName, queue), fmt.Sprintf(QueueName, queue))
+	r.migrateExpiredJobs(fmt.Sprintf(ReservedQueueName, queue), fmt.Sprintf(QueueName, queue))
 }
 
 func (r *RedisBroker) migrateExpiredJobs(from string, to string) {
@@ -93,9 +76,9 @@ func (r *RedisBroker) Reserve(queue string, timeout int64) (id string, err error
 	defer conn.Close()
 	// reserve next job
 	if timeout > 0 {
-		id, err = redis.String(conn.Do("EVAL", ReserveScript, 2, queue, fmt.Sprintf("%s:reserved", queue), delayAt(timeout)))
+		id, err = redis.String(conn.Do("EVAL", ReserveScript, 2, fmt.Sprintf(QueueName, queue), fmt.Sprintf(ReservedQueueName, queue), delayAt(timeout)))
 	} else {
-		id, err = redis.String(conn.Do("LPOP", queue))
+		id, err = redis.String(conn.Do("LPOP", fmt.Sprintf(QueueName, queue)))
 	}
 	if err != nil {
 		return "", err
@@ -109,7 +92,7 @@ func (r *RedisBroker) Reserve(queue string, timeout int64) (id string, err error
 func (r *RedisBroker) Delete(queue, id string) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	if _, err := conn.Do("ZREM", fmt.Sprintf("%s:reserved", queue), id); err != nil {
+	if _, err := conn.Do("ZREM", fmt.Sprintf(ReservedQueueName, queue), id); err != nil {
 		logrus.Error(err)
 		return err
 	}
@@ -122,7 +105,7 @@ func (r *RedisBroker) Delete(queue, id string) error {
 func (r *RedisBroker) Release(queue, id string, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	if _, err := conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf("%s:delayed", queue), fmt.Sprintf("%s:reserved", queue), id, delayAt(delay)); err != nil {
+	if _, err := conn.Do("EVAL", ReleaseScript, 2, fmt.Sprintf(DelayedQueueName, queue), fmt.Sprintf(ReservedQueueName, queue), id, delayAt(delay)); err != nil {
 		logrus.Error(err)
 		return err
 	}
@@ -134,7 +117,7 @@ func (r *RedisBroker) Release(queue, id string, delay int64) error {
 func (r *RedisBroker) Push(queue, id string) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	if _, err := conn.Do("RPUSH", queue, id); err != nil {
+	if _, err := conn.Do("RPUSH", fmt.Sprintf(QueueName, queue), id); err != nil {
 		logrus.Error(err)
 		return err
 	}
@@ -147,7 +130,7 @@ func (r *RedisBroker) Push(queue, id string) error {
 func (r *RedisBroker) Later(queue, id string, delay int64) error {
 	conn := r.pool.Get()
 	defer conn.Close()
-	if _, err := conn.Do("ZADD", fmt.Sprintf("%s:delayed", queue), delayAt(delay), id); err != nil {
+	if _, err := conn.Do("ZADD", fmt.Sprintf(DelayedQueueName, queue), delayAt(delay), id); err != nil {
 		logrus.Error(err)
 		return err
 	}

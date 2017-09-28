@@ -2,7 +2,6 @@ package linda
 
 import (
 	"github.com/garyburd/redigo/redis"
-	neturl "net/url"
 	"time"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
@@ -15,46 +14,18 @@ const (
 )
 
 type RedisSaver struct {
-	redisURL *neturl.URL
-	pool     *redis.Pool
+	url  string
+	pool *redis.Pool
 }
 
 // Connect saver backend with url
-func (r *RedisSaver) Connect(url *neturl.URL) error {
-	r.redisURL = url
-
-	var network string
-	var host string
-	var password string
-	var db string
-	network = "tcp"
-	host = url.Host
-	if url.User != nil {
-		password, _ = url.User.Password()
-	}
-	if len(url.Path) > 1 {
-		db = url.Path[1:]
-	}
-
+func (r *RedisSaver) Connect(rawUrl string, timeout time.Duration) error {
+	r.url = rawUrl
 	r.pool = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial(network, host, redis.DialConnectTimeout(time.Second), redis.DialReadTimeout(time.Second), redis.DialWriteTimeout(time.Second))
+			c, err := redis.DialURL(rawUrl, redis.DialConnectTimeout(timeout))
 			if err != nil {
 				return nil, err
-			}
-			if password != "" {
-				_, err := c.Do("AUTH", password)
-				if err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			if db != "" {
-				_, err := c.Do("SELECT", db)
-				if err != nil {
-					c.Close()
-					return nil, err
-				}
 			}
 			return c, nil
 		},

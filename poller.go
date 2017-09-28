@@ -20,13 +20,13 @@ func newPoller() (*poller, error) {
 	}, nil
 }
 
-func (p *poller) poll(queue string, timeout int64, interval time.Duration) <-chan *Job {
-	jobs := make(chan *Job)
+func (p *poller) poll(queue string, timeout int64, interval time.Duration) <-chan string {
+	jobIDs := make(chan string)
 	go func() {
 		logrus.Debugf("poller {%s} start...", p)
 		defer func() {
 			logrus.Debugf("poller {%s} stop...", p)
-			close(jobs)
+			close(jobIDs)
 		}()
 		for {
 			select {
@@ -35,14 +35,11 @@ func (p *poller) poll(queue string, timeout int64, interval time.Duration) <-cha
 			default:
 				broker.MigrateExpiredJobs(queue)
 				jobID, _ := broker.Reserve(queue, timeout)
-				if jobID != "" { // push job to jobs chan
-					job, _ := saver.Get(jobID)
-					if job != nil {
-						select {
-						case jobs <- job:
-						case <-quit:
-							return
-						}
+				if jobID != "" {
+					select {
+					case jobIDs <- jobID:
+					case <-quit:
+						return
 					}
 				} else { // sleep ...
 					sleep := time.After(interval)
@@ -56,5 +53,5 @@ func (p *poller) poll(queue string, timeout int64, interval time.Duration) <-cha
 			}
 		}
 	}()
-	return jobs
+	return jobIDs
 }

@@ -3,6 +3,7 @@ package linda
 import (
 	"github.com/sirupsen/logrus"
 	"sync"
+	"time"
 )
 
 type worker struct {
@@ -22,7 +23,7 @@ func newWorker(id string) (*worker, error) {
 	}, nil
 }
 
-func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
+func (w *worker) work(jobIDs <-chan string, monitor *sync.WaitGroup) {
 	monitor.Add(1)
 	go func() {
 		logrus.Debugf("worker {%s} start...", w)
@@ -30,7 +31,12 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 			logrus.Debugf("worker {%s} stop...", w)
 			defer monitor.Done()
 		}()
-		for job := range jobs {
+		for jobID := range jobIDs {
+			job, err := saver.Get(jobID)
+			if err != nil || job == nil {
+				logrus.Errorf("saver.Get(%v) error {%s}", jobID, err)
+				continue
+			}
 			if workerFunc, ok := workers[job.Payload.Class]; ok {
 				if err := w.run(job, workerFunc); err != nil {
 					logrus.Error(err)
@@ -41,6 +47,7 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 			} else {
 				logrus.Errorf("no worker for job {%s}", job)
 			}
+			saver.Put(job)
 		}
 	}()
 }
@@ -48,17 +55,29 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 func (w *worker) run(job *Job, workerFunc workerFunc) error {
 	defer func() {
 		if r := recover(); r != nil {
-			logrus.Error(r)
+			logrus.Errorf("workerFunc(%s) error {%s}", job, r)
+			job.State.Retries++
 		}
 	}()
-	logrus.Infof("run job {%s}", job)
-	return workerFunc(job.Payload.Args...)
+	logrus.Debugf("run job {%s}", job)
+	if err := workerFunc(job.Payload.Args...); err != nil {
+		panic(err)
+	}
+	job.State.RunTimes++
+	job.State.LastRunAt = time.Now()
+	job.State.Retries = 0
+	return nil
 }
 
 func (w *worker) nextRun(job *Job) error {
 	var err error
 	if job.Period == 0 {
-		err = broker.Delete(job.Queue, job.ID)
+		if job.State.Retries >= job.Retry {
+			err = broker.Delete(job.Queue, job.ID)
+		} else {
+			// retry after 300 seconds...
+			err = broker.Release(job.Queue, job.ID, 300)
+		}
 	} else {
 		err = broker.Release(job.Queue, job.ID, job.Period)
 	}

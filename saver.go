@@ -4,6 +4,8 @@ import (
 	"errors"
 	neturl "net/url"
 	"github.com/sirupsen/logrus"
+	"strconv"
+	"time"
 )
 
 var (
@@ -13,7 +15,7 @@ var (
 // Saver is job saved on [Storage]
 // it provides a unified API, support multi drivers
 type Saver interface {
-	Connect(url *neturl.URL) error
+	Connect(url string, timeout time.Duration) error
 	Close() error
 	Put(job *Job) error
 	Get(id string) (*Job, error)
@@ -34,14 +36,18 @@ func RegisterSaver(scheme string, saver Saver) {
 // NewSaver will get an instance of saver with url string
 // if there is no matched scheme, return error
 // now saver only support redis
-func NewSaver(urlString string) (Saver, error) {
-	url, err := neturl.Parse(urlString)
+func NewSaver(rawUrl string) (Saver, error) {
+	url, err := neturl.Parse(rawUrl)
 	if err != nil {
 		return nil, err
 	}
 	scheme := url.Scheme
+	timeout, err := strconv.Atoi(url.Query().Get("timeout"))
+	if err != nil {
+		timeout = 1000
+	}
 	if s, ok := saverMaps[scheme]; ok {
-		err := s.Connect(url)
+		err := s.Connect(rawUrl, time.Duration(timeout)*time.Millisecond)
 		if err != nil {
 			return nil, err
 		}
