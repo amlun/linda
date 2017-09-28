@@ -53,7 +53,7 @@ func (r *RedisBroker) Close() error {
 
 // MigrateExpiredJobs is used for migrate expired jobs to ready queue
 func (r *RedisBroker) MigrateExpiredJobs(queue string) {
-	r.migrateExpiredJobs(fmt.Sprintf(ReservedQueueName, queue), fmt.Sprintf(QueueName, queue))
+	r.migrateExpiredJobs(fmt.Sprintf(DelayedQueueName, queue), fmt.Sprintf(QueueName, queue))
 	r.migrateExpiredJobs(fmt.Sprintf(ReservedQueueName, queue), fmt.Sprintf(QueueName, queue))
 }
 
