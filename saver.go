@@ -19,6 +19,7 @@ type Saver interface {
 	Close() error
 	Put(job *Job) error
 	Get(id string) (*Job, error)
+	Delete(id string) error
 }
 
 var saverMaps = make(map[string]Saver)

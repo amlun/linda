@@ -59,7 +59,6 @@ func (r *RedisSaver) Put(job *Job) error {
 		logrus.Error(err)
 		return err
 	}
-	logrus.Infof("put job {%s}", job)
 	return nil
 }
 
@@ -79,4 +78,17 @@ func (r *RedisSaver) Get(id string) (*Job, error) {
 		return nil, err
 	}
 	return job, nil
+}
+
+// Delete the job from saver
+func (r *RedisSaver) Delete(id string) error {
+	conn := r.pool.Get()
+	defer conn.Close()
+	// job info
+	key := fmt.Sprintf(JobInfoPrefix, id)
+	if _, err := conn.Do("DEL", key); err != nil {
+		logrus.Error(err)
+		return err
+	}
+	return nil
 }
