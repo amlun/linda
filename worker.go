@@ -13,7 +13,7 @@ type worker struct {
 type workerFunc func(...interface{}) error
 
 func newWorker(id string) (*worker, error) {
-	process, err := newProcess("worker" + id)
+	process, err := newProcess("worker-" + id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
