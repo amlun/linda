@@ -44,13 +44,12 @@ func Close() {
 		logrus.Debugf("close linda...")
 		broker.Close()
 		saver.Close()
-		close(quit)
 		initialized = false
 	}
 }
 
 func Quit() {
-	quit <- true
+	close(quit)
 }
 
 // Run linda, it also call init function self

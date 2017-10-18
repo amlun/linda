@@ -38,21 +38,20 @@ func (w *worker) work(jobIDs <-chan string, monitor *sync.WaitGroup) {
 				continue
 			}
 			if workerFunc, ok := workers[job.Payload.Class]; ok {
-				if err := w.run(job, workerFunc); err != nil {
-					logrus.Error(err)
-				}
-				if err := w.nextRun(job); err != nil {
-					logrus.Error(err)
-				}
+				w.run(job, workerFunc)
 			} else {
+				// TODO
 				logrus.Errorf("no worker for job {%s}", job)
+			}
+			if err := w.nextRun(job); err != nil {
+				logrus.Error(err)
 			}
 			saver.Put(job)
 		}
 	}()
 }
 
-func (w *worker) run(job *Job, workerFunc workerFunc) error {
+func (w *worker) run(job *Job, workerFunc workerFunc) {
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Errorf("workerFunc(%s) error {%s}", job, r)
@@ -66,7 +65,6 @@ func (w *worker) run(job *Job, workerFunc workerFunc) error {
 	job.State.RunTimes++
 	job.State.LastRunAt = time.Now()
 	job.State.Retries = 0
-	return nil
 }
 
 func (w *worker) nextRun(job *Job) error {
