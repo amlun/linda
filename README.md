@@ -255,3 +255,4 @@ func signalStop(c chan<- os.Signal) {
 ## Thanks
 
 * [redigo](https://github.com/garyburd/redigo)
+* [logrus](https://github.com/sirupsen/logrus)
